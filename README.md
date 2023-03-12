@@ -1,6 +1,6 @@
 # Golang Tag Align Linter
 
-This linter is used to align golang struct's tags.
+This linter is used to align golang struct's tags. It is built for integrating with [golangci-lint](https://golangci-lint.run/usage/quick-start/).
 
 For example:
 
@@ -28,4 +28,6 @@ For example:
 
 [Golang AST Visualizer](http://goast.yuroyoro.net/)
 
-[autofix example](https://github.com/golangci/golangci-lint/pull/2450/files)
+[Create New Golang CI Linter](https://golangci-lint.run/contributing/new-linters/)
+
+[Autofix Example](https://github.com/golangci/golangci-lint/pull/2450/files)
