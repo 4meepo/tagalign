@@ -1,26 +1,28 @@
 # Golang Tag Align Linter
 
-This linter is used to align golang struct's tags. For example:
+This linter is used to align golang struct's tags.
 
-Before aligned:
+For example:
 
-```go
-type Foo struct {
-    Id      string `json:"id" yaml:"Id"`
-    Name    string `json:"name" yaml:"name"`
-    Address string `json:"Address" yaml:"Address"`
-}
-```
+    Before aligned:
 
-After aligned:
+    ```go
+    type Foo struct {
+        Id      string `json:"id" yaml:"Id"`
+        Name    string `json:"name" yaml:"name"`
+        Address string `json:"Address" yaml:"Address"`
+    }
+    ```
 
-```go
-type Foo struct {
-    Id      string `json:"id"      yaml:"Id"`
-    Name    string `json:"name"    yaml:"name"`
-    Address string `json:"Address" yaml:"Address"`
-}
-```
+    After aligned:
+
+    ```go
+    type Foo struct {
+        Id      string `json:"id"      yaml:"Id"`
+        Name    string `json:"name"    yaml:"name"`
+        Address string `json:"Address" yaml:"Address"`
+    }
+    ```
 
 ## Reference
 
