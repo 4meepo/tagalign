@@ -1,0 +1,1 @@
+# Golang Tag Align Linter
