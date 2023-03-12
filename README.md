@@ -4,7 +4,7 @@ This linter is used to align golang struct's tags.
 
 For example:
 
-    Before aligned:
+* Before aligned:
 
     ```go
     type Foo struct {
@@ -14,7 +14,7 @@ For example:
     }
     ```
 
-    After aligned:
+* After aligned:
 
     ```go
     type Foo struct {
