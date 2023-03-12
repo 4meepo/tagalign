@@ -16,7 +16,7 @@
 # Test binary, built with `go test -c`
 *.test
 
-.vscode
+.vscode/*
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
@@ -60,15 +60,6 @@ Temporary Items
 # iCloud generated files
 *.icloud
 
-### VisualStudioCode ###
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-
-# Local History for Visual Studio Code
 .history/
 
 # Built Visual Studio Code Extensions
