@@ -16,6 +16,8 @@
 # Test binary, built with `go test -c`
 *.test
 
+.vscode
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
@@ -32,7 +34,8 @@ go.work
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
@@ -79,4 +82,3 @@ Temporary Items
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,go
 
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
-

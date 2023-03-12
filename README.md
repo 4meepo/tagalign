@@ -25,4 +25,5 @@ type Foo struct {
 ## Reference
 
 [Golang AST Visualizer](http://goast.yuroyoro.net/)
+
 [autofix example](https://github.com/golangci/golangci-lint/pull/2450/files)
