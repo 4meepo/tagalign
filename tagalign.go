@@ -7,37 +7,50 @@ import (
 	"strings"
 
 	"github.com/fatih/structtag"
+	"github.com/golangci/golangci-lint/pkg/golinters/goanalysis"
+	"github.com/golangci/golangci-lint/pkg/lint/linter"
+
 	"golang.org/x/tools/go/analysis"
 )
 
-func NewAnalyzer() *analysis.Analyzer {
+func NewAnalyzerWithIssuesReporter() (*analysis.Analyzer, func(*linter.Context) []goanalysis.Issue) {
+	var issues []goanalysis.Issue
 	return &analysis.Analyzer{
-		Name: "tagalign",
-		Doc:  "check that struct tags are aligned",
-		Run:  run,
-	}
+			Name: "tagalign",
+			Doc:  "check that struct tags are aligned",
+			Run: func(p *analysis.Pass) (interface{}, error) {
+				var err error
+				issues, err = run(p)
+				return nil, err
+			},
+		},
+		func(ctx *linter.Context) []goanalysis.Issue {
+			return issues
+		}
 }
 
-func run(pass *analysis.Pass) (any, error) {
-	var groups []group
+func run(pass *analysis.Pass) ([]goanalysis.Issue, error) {
 	for _, f := range pass.Files {
+		var groups []group
 		ast.Inspect(f, func(n ast.Node) bool {
-			return checkStruct(pass, n, &groups)
+			return findGroups(pass, n, &groups)
 		})
-		process(&groups)
+		processGroups(&groups)
 	}
-	// goanalysis.NewIssue
 
 	return nil, nil
 }
 
-func checkStruct(pass *analysis.Pass, n ast.Node, groups *[]group) bool {
+// =======================
+
+func findGroups(pass *analysis.Pass, n ast.Node, groups *[]group) bool {
 	v, ok := n.(*ast.StructType)
 	if !ok || len(v.Fields.List) == 0 {
+		// no need to check non-struct or struct with 0 fields
 		return true
 	}
 
-	preProcessStruct(pass.Fset, v, groups)
+	findGroupInStruct(pass.Fset, v, groups)
 
 	return true
 }
@@ -54,11 +67,11 @@ type line struct {
 	result    string
 }
 
-func preProcessStruct(fset *token.FileSet, st *ast.StructType, groups *[]group, inline ...bool) {
-	lastLineNum := fset.Position(st.Fields.List[0].Pos()).Line
+func findGroupInStruct(fset *token.FileSet, _struct *ast.StructType, groups *[]group, inline ...bool) {
+	lastLineNum := fset.Position(_struct.Fields.List[0].Pos()).Line
 	grp := group{}
-	l := len(st.Fields.List)
-	for idx, field := range st.Fields.List {
+	fieldsNum := len(_struct.Fields.List)
+	for idx, field := range _struct.Fields.List {
 		if field.Tag == nil {
 			continue
 		}
@@ -68,17 +81,17 @@ func preProcessStruct(fset *token.FileSet, st *ast.StructType, groups *[]group, 
 			continue
 		}
 
-		tag = strings.TrimLeft(tag, " ")
-		tag = strings.TrimRight(tag, " ")
+		tag = strings.TrimSpace(tag)
 
 		tags, err := structtag.Parse(tag)
 		if err != nil {
 			continue
 		}
 
+		// in case the field is a struct type.
 		if _, ok := field.Type.(*ast.StructType); ok {
-			if idx+1 < l {
-				lastLineNum = fset.Position(st.Fields.List[idx+1].Pos()).Line
+			if idx+1 < fieldsNum {
+				lastLineNum = fset.Position(_struct.Fields.List[idx+1].Pos()).Line // todo
 			}
 
 			*groups = append(*groups, grp)
@@ -105,7 +118,6 @@ func preProcessStruct(fset *token.FileSet, st *ast.StructType, groups *[]group, 
 
 		lineNum := fset.Position(field.Pos()).Line
 		if lineNum-lastLineNum >= 2 {
-			lastLineNum = lineNum
 			*groups = append(*groups, grp)
 			grp = group{
 				maxTagNum: tags.Len(),
@@ -122,7 +134,7 @@ func preProcessStruct(fset *token.FileSet, st *ast.StructType, groups *[]group, 
 	}
 }
 
-func process(groups *[]group) {
+func processGroups(groups *[]group) {
 	for _, grp := range *groups {
 		if len(grp.lines) <= 1 {
 			continue

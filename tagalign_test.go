@@ -7,5 +7,6 @@ import (
 )
 
 func TestAnalyzer(t *testing.T) {
-	analysistest.Run(t, analysistest.TestData(), NewAnalyzer())
+	a, _ := NewAnalyzerWithIssuesReporter()
+	analysistest.Run(t, analysistest.TestData(), a)
 }

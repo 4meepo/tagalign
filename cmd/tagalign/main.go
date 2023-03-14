@@ -6,5 +6,6 @@ import (
 )
 
 func main() {
-	singlechecker.Main(tagalign.NewAnalyzer())
+	a, _ := tagalign.NewAnalyzerWithIssuesReporter()
+	singlechecker.Main(a)
 }

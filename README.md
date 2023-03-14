@@ -7,20 +7,34 @@ For example:
 * Before aligned:
 
     ```go
-    type Foo struct {
-        Id      string `json:"id" yaml:"Id"`
-        Name    string `json:"name" yaml:"name"`
-        Address string `json:"Address" yaml:"Address"`
+    type FooBar struct {
+        Foo    int    `json:"foo" validate:"required"`
+        Bar    string `json:"bar" validate:"required"`
+        FooFoo int8   `json:"foo_foo" validate:"required"`
+        BarBar int    `json:"bar_bar" validate:"required"`
+        FooBar struct {
+        Foo    int    `json:"foo" yaml:"foo" validate:"required"`
+        Bar222 string `json:"bar222" validate:"required" yaml:"bar"`
+        } `json:"foo_bar" validate:"required"`
+        BarFoo    string `json:"bar_foo" validate:"required"`
+        BarFooBar string `json:"bar_foo_bar" validate:"required"`
     }
     ```
 
 * After aligned:
 
     ```go
-    type Foo struct {
-        Id      string `json:"id"      yaml:"Id"`
-        Name    string `json:"name"    yaml:"name"`
-        Address string `json:"Address" yaml:"Address"`
+    type FooBar struct {
+        Foo    int    `json:"foo"     validate:"required"`
+        Bar    string `json:"bar"     validate:"required"`
+        FooFoo int8   `json:"foo_foo" validate:"required"`
+        BarBar int    `json:"bar_bar" validate:"required"`
+        FooBar struct {
+            Foo    int    `json:"foo"    yaml:"foo"          validate:"required"`
+            Bar222 string `json:"bar222" validate:"required" yaml:"bar"`
+        } `json:"foo_bar" validate:"required"`
+        BarFoo    string `json:"bar_foo"     validate:"required"`
+        BarFooBar string `json:"bar_foo_bar" validate:"required"`
     }
     ```
 
