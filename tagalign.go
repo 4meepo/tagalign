@@ -1,6 +1,7 @@
 package tagalign
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"strconv"
@@ -30,30 +31,58 @@ func NewAnalyzerWithIssuesReporter() (*analysis.Analyzer, func(*linter.Context) 
 }
 
 func run(pass *analysis.Pass) ([]goanalysis.Issue, error) {
+	var issues []goanalysis.Issue
 	for _, f := range pass.Files {
 		var groups []group
 		ast.Inspect(f, func(n ast.Node) bool {
-			return findGroups(pass, n, &groups)
+			issues = append(issues, checkNode(pass, n)...)
+			return true
 		})
 		processGroups(&groups)
 	}
 
-	return nil, nil
+	return issues, nil
 }
 
-// =======================
+// tagGroup is a group of tags which is continuous struct.
+type tagGroup struct {
+	// todo
+}
 
-func findGroups(pass *analysis.Pass, n ast.Node, groups *[]group) bool {
+// checkNode check node's type, if it's a struct, check it.
+func checkNode(pass *analysis.Pass, n ast.Node) []goanalysis.Issue {
 	v, ok := n.(*ast.StructType)
-	if !ok || len(v.Fields.List) == 0 {
-		// no need to check non-struct or struct with 0 fields
-		return true
+	if !ok {
+		return nil
 	}
 
-	findGroupInStruct(pass.Fset, v, groups)
+	fields := v.Fields.List
+	if len(fields) == 0 {
+		// no need to check non-struct or struct with 0 fields
+		return nil
+	}
 
-	return true
+	// check struct
+	var issues []goanalysis.Issue
+
+	// loop fields
+	for _, field := range fields {
+		if field.Tag == nil {
+			continue
+		}
+
+		tag, err := strconv.Unquote(field.Tag.Value)
+		if err != nil {
+			continue
+		}
+		// todo
+		fmt.Println(tag)
+	}
+
+	return issues
 }
+
+// ======================= deprecated
 
 type group struct {
 	maxTagNum int
