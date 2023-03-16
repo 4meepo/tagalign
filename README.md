@@ -45,3 +45,5 @@ For example:
 [Create New Golang CI Linter](https://golangci-lint.run/contributing/new-linters/)
 
 [Autofix Example](https://github.com/golangci/golangci-lint/pull/2450/files)
+
+[Integraing](https://disaev.me/p/writing-useful-go-analysis-linter/#integrating)

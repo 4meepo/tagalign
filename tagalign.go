@@ -1,33 +1,29 @@
 package tagalign
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
+	"runtime"
 	"strconv"
 	"strings"
 
 	"github.com/fatih/structtag"
 	"github.com/golangci/golangci-lint/pkg/golinters/goanalysis"
-	"github.com/golangci/golangci-lint/pkg/lint/linter"
+	"github.com/golangci/golangci-lint/pkg/result"
 
 	"golang.org/x/tools/go/analysis"
 )
 
-func NewAnalyzerWithIssuesReporter() (*analysis.Analyzer, func(*linter.Context) []goanalysis.Issue) {
-	var issues []goanalysis.Issue
+func NewAnalyzerWithIssuesReporter() *analysis.Analyzer {
 	return &analysis.Analyzer{
-			Name: "tagalign",
-			Doc:  "check that struct tags are aligned",
-			Run: func(p *analysis.Pass) (interface{}, error) {
-				var err error
-				issues, err = run(p)
-				return nil, err
-			},
+		Name: "tagalign",
+		Doc:  "check that struct tags are well aligned",
+		Run: func(p *analysis.Pass) (interface{}, error) {
+			var err error
+			run(p)
+			return nil, err
 		},
-		func(ctx *linter.Context) []goanalysis.Issue {
-			return issues
-		}
+	}
 }
 
 func run(pass *analysis.Pass) ([]goanalysis.Issue, error) {
@@ -44,8 +40,8 @@ func run(pass *analysis.Pass) ([]goanalysis.Issue, error) {
 	return issues, nil
 }
 
-// tagGroup is a group of tags which is continuous struct.
-type tagGroup struct {
+// field is a group of fields which is continuous in struct.
+type fieldGroup struct {
 	// todo
 }
 
@@ -75,8 +71,18 @@ func checkNode(pass *analysis.Pass, n ast.Node) []goanalysis.Issue {
 		if err != nil {
 			continue
 		}
+
 		// todo
-		fmt.Println(tag)
+		iss := goanalysis.NewIssue(&result.Issue{}, pass)
+		issues = append(issues, iss)
+
+		pass.Report(analysis.Diagnostic{
+			Pos:     field.Pos(),
+			End:     field.End(),
+			Message: "hint",
+		})
+
+		runtime.KeepAlive(tag)
 	}
 
 	return issues
