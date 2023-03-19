@@ -12,51 +12,44 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-func NewAnalyzerWrapper() *AnalyzerWrapper {
-	a := &analysis.Analyzer{
+func NewAnalyzer(report bool) *analysis.Analyzer {
+	return &analysis.Analyzer{
 		Name: "tagalign",
 		Doc:  "check that struct tags are well aligned",
-		Run: func(p *analysis.Pass) (interface{}, error) {
-			var err error
-			run(p)
-			return nil, err
+		Run: func(p *analysis.Pass) (any, error) {
+			RunTagAlign(p, report)
+			return nil, nil
 		},
-	}
-	return &AnalyzerWrapper{
-		a: a,
 	}
 }
 
-func run(pass *analysis.Pass) error {
+func RunTagAlign(pass *analysis.Pass, report bool) []Issue {
+	var issues []Issue
 	for _, f := range pass.Files {
-		a := AnalyzerWrapper{}
+		a := Helper{report: report}
 		ast.Inspect(f, func(n ast.Node) bool {
 			a.find(pass, n)
 			return true
 		})
 		a.align(pass)
+		issues = append(issues, a.issues...)
 	}
-
-	return nil
+	return issues
 }
 
-type AnalyzerWrapper struct {
-	a                     *analysis.Analyzer
+type Helper struct {
+	report                bool
 	unalignedFieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
 	issues                []Issue
 }
 
 type Issue struct {
-	Pos         token.Position
-	Message     string
-	Replacement string
+	Pos               token.Position
+	Message           string
+	InlineReplacement string
 }
 
-func (w *AnalyzerWrapper) Unwrap() *analysis.Analyzer {
-	return w.a
-}
-
-func (w *AnalyzerWrapper) find(pass *analysis.Pass, n ast.Node) {
+func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 	v, ok := n.(*ast.StructType)
 	if !ok {
 		return
@@ -102,7 +95,7 @@ func (w *AnalyzerWrapper) find(pass *analysis.Pass, n ast.Node) {
 	return
 }
 
-func (w *AnalyzerWrapper) align(pass *analysis.Pass) {
+func (w *Helper) align(pass *analysis.Pass) {
 	for _, fields := range w.unalignedFieldsGroups {
 		// offsets := make([]int, len(fields))
 
@@ -143,6 +136,7 @@ func (w *AnalyzerWrapper) align(pass *analysis.Pass) {
 		for i, field := range fields {
 			tags := tagsGroup[i]
 
+			// new new builder
 			newTagBuilder := strings.Builder{}
 			for i, tag := range tags {
 				format := alignFormat(tagMaxLens[i] + 1) // with an extra space
@@ -156,37 +150,40 @@ func (w *AnalyzerWrapper) align(pass *analysis.Pass) {
 			}
 
 			msg := "tag is not aligned, should be: " + newTagValue
-			pass.Report(analysis.Diagnostic{
-				Pos:     field.Tag.Pos(),
-				End:     field.Tag.End(),
-				Message: msg,
-				SuggestedFixes: []analysis.SuggestedFix{
-					{
-						Message: "align tag",
-						TextEdits: []analysis.TextEdit{
-							{
-								Pos:     field.Tag.Pos(),
-								End:     field.Tag.End(),
-								NewText: []byte(newTagValue),
+			// for integrate with golangci-lint
+			iss := Issue{
+				Pos:               pass.Fset.Position(field.Tag.Pos()),
+				Message:           msg,
+				InlineReplacement: newTagValue,
+			}
+			w.issues = append(w.issues, iss)
+
+			if w.report {
+				pass.Report(analysis.Diagnostic{
+					Pos:     field.Tag.Pos(),
+					End:     field.Tag.End(),
+					Message: msg,
+					SuggestedFixes: []analysis.SuggestedFix{
+						{
+							Message: "align tag",
+							TextEdits: []analysis.TextEdit{
+								{
+									Pos:     field.Tag.Pos(),
+									End:     field.Tag.End(),
+									NewText: []byte(newTagValue),
+								},
 							},
 						},
 					},
-				},
-			})
-			// for integrate with golangci-lint
-			iss := Issue{
-				Pos:         pass.Fset.Position(field.Tag.Pos()),
-				Message:     msg,
-				Replacement: newTagValue,
+				})
 			}
-			w.issues = append(w.issues, iss)
 		}
 	}
 }
 
 // Issues returns all issues found by the analyzer.
 // It is used to integrate with golangci-lint.
-func (w *AnalyzerWrapper) Issues() []Issue {
+func (w *Helper) Issues() []Issue {
 	return w.issues
 }
 
