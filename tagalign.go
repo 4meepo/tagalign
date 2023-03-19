@@ -12,21 +12,28 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-func NewAnalyzer(report bool) *analysis.Analyzer {
+type Mode int
+
+const (
+	StandaloneMode Mode = iota
+	GolangciLintMode
+)
+
+func NewAnalyzer(mode Mode) *analysis.Analyzer {
 	return &analysis.Analyzer{
 		Name: "tagalign",
 		Doc:  "check that struct tags are well aligned",
 		Run: func(p *analysis.Pass) (any, error) {
-			RunTagAlign(p, report)
+			RunTagAlign(p, mode)
 			return nil, nil
 		},
 	}
 }
 
-func RunTagAlign(pass *analysis.Pass, report bool) []Issue {
+func RunTagAlign(pass *analysis.Pass, mode Mode) []Issue {
 	var issues []Issue
 	for _, f := range pass.Files {
-		a := Helper{report: report}
+		a := Helper{mode: mode}
 		ast.Inspect(f, func(n ast.Node) bool {
 			a.find(pass, n)
 			return true
@@ -38,15 +45,21 @@ func RunTagAlign(pass *analysis.Pass, report bool) []Issue {
 }
 
 type Helper struct {
-	report                bool
+	mode                  Mode
 	unalignedFieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
 	issues                []Issue
 }
 
+// Issue is used to integrate with golangci-lint's inline auto fix.
 type Issue struct {
-	Pos               token.Position
-	Message           string
-	InlineReplacement string
+	Pos       token.Position
+	Message   string
+	InlineFix InlineFix
+}
+type InlineFix struct {
+	StartCol  int
+	Length    int
+	NewString string
 }
 
 func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
@@ -97,12 +110,12 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 
 func (w *Helper) align(pass *analysis.Pass) {
 	for _, fields := range w.unalignedFieldsGroups {
-		// offsets := make([]int, len(fields))
+		offsets := make([]int, len(fields))
 
 		var maxTagNum int
 		var tagsGroup [][]*structtag.Tag
-		for _, field := range fields {
-			// offsets[i] = pass.Fset.Position(field.Tag.Pos()).Column
+		for i, field := range fields {
+			offsets[i] = pass.Fset.Position(field.Tag.Pos()).Column
 			tag, err := strconv.Unquote(field.Tag.Value)
 			if err != nil {
 				break
@@ -118,7 +131,7 @@ func (w *Helper) align(pass *analysis.Pass) {
 			tagsGroup = append(tagsGroup, tags.Tags())
 		}
 
-		// 记录每列 tag的最大长度
+		// record the max length of each column tag
 		tagMaxLens := make([]int, maxTagNum)
 
 		for j := 0; j < maxTagNum; j++ {
@@ -150,22 +163,28 @@ func (w *Helper) align(pass *analysis.Pass) {
 			}
 
 			msg := "tag is not aligned, should be: " + newTagValue
-			// for integrate with golangci-lint
-			iss := Issue{
-				Pos:               pass.Fset.Position(field.Tag.Pos()),
-				Message:           msg,
-				InlineReplacement: newTagValue,
-			}
-			w.issues = append(w.issues, iss)
 
-			if w.report {
+			if w.mode == GolangciLintMode {
+				iss := Issue{
+					Pos:     pass.Fset.Position(field.Tag.Pos()),
+					Message: msg,
+					InlineFix: InlineFix{
+						StartCol:  offsets[i],
+						Length:    len(field.Tag.Value),
+						NewString: newTagValue,
+					},
+				}
+				w.issues = append(w.issues, iss)
+			}
+
+			if w.mode == StandaloneMode {
 				pass.Report(analysis.Diagnostic{
 					Pos:     field.Tag.Pos(),
 					End:     field.Tag.End(),
 					Message: msg,
 					SuggestedFixes: []analysis.SuggestedFix{
 						{
-							Message: "align tag",
+							Message: msg,
 							TextEdits: []analysis.TextEdit{
 								{
 									Pos:     field.Tag.Pos(),
@@ -184,6 +203,9 @@ func (w *Helper) align(pass *analysis.Pass) {
 // Issues returns all issues found by the analyzer.
 // It is used to integrate with golangci-lint.
 func (w *Helper) Issues() []Issue {
+	if w.mode != GolangciLintMode {
+		panic("Issues() should only be called in golangci-lint mode")
+	}
 	return w.issues
 }
 
