@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -19,33 +20,42 @@ const (
 	GolangciLintMode
 )
 
-func NewAnalyzer(mode Mode) *analysis.Analyzer {
+func NewAnalyzer(options ...Option) *analysis.Analyzer {
 	return &analysis.Analyzer{
 		Name: "tagalign",
 		Doc:  "check that struct tags are well aligned",
 		Run: func(p *analysis.Pass) (any, error) {
-			RunTagAlign(p, mode)
+			Run(p, options...)
 			return nil, nil
 		},
 	}
 }
 
-func RunTagAlign(pass *analysis.Pass, mode Mode) []Issue {
+func Run(pass *analysis.Pass, options ...Option) []Issue {
 	var issues []Issue
 	for _, f := range pass.Files {
-		a := Helper{mode: mode}
+		h := &Helper{
+			mode: StandaloneMode,
+		}
+		for _, opt := range options {
+			opt(h)
+		}
+
 		ast.Inspect(f, func(n ast.Node) bool {
-			a.find(pass, n)
+			h.find(pass, n)
 			return true
 		})
-		a.align(pass)
-		issues = append(issues, a.issues...)
+		h.align(pass)
+		issues = append(issues, h.issues...)
 	}
 	return issues
 }
 
 type Helper struct {
-	mode         Mode
+	mode          Mode
+	autoSort      bool
+	fixedTagOrder []string // fixed tag order, the others will be sorted by name.
+
 	fieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
 	issues       []Issue
 }
@@ -137,6 +147,10 @@ func (w *Helper) align(pass *analysis.Pass) {
 
 			maxTagNum = max(maxTagNum, tags.Len())
 
+			if w.autoSort {
+				sortBy(w.fixedTagOrder, tags)
+			}
+
 			tagsGroup = append(tagsGroup, tags.Tags())
 		}
 
@@ -217,6 +231,42 @@ func (w *Helper) Issues() []Issue {
 		panic("Issues() should only be called in golangci-lint mode")
 	}
 	return w.issues
+}
+
+// sortBy sorts tags by fixed order.
+// If a tag is not in the fixed order, it will be sorted by name.
+func sortBy(fixedOrder []string, tags *structtag.Tags) {
+	// sort by fixed order
+	sort.Slice(tags.Tags(), func(i, j int) bool {
+		ti := tags.Tags()[i]
+		tj := tags.Tags()[j]
+
+		oi := findIndex(fixedOrder, ti.Key)
+		oj := findIndex(fixedOrder, tj.Key)
+
+		if oi == -1 && oj == -1 {
+			return ti.Key < tj.Key
+		}
+
+		if oi == -1 {
+			return false
+		}
+
+		if oj == -1 {
+			return true
+		}
+
+		return oi < oj
+	})
+}
+
+func findIndex(s []string, e string) int {
+	for i, a := range s {
+		if a == e {
+			return i
+		}
+	}
+	return -1
 }
 
 func alignFormat(length int) string {
