@@ -13,13 +13,6 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-type Mode int
-
-const (
-	StandaloneMode Mode = iota
-	GolangciLintMode
-)
-
 func NewAnalyzer(options ...Option) *analysis.Analyzer {
 	return &analysis.Analyzer{
 		Name: "tagalign",
@@ -34,9 +27,7 @@ func NewAnalyzer(options ...Option) *analysis.Analyzer {
 func Run(pass *analysis.Pass, options ...Option) []Issue {
 	var issues []Issue
 	for _, f := range pass.Files {
-		h := &Helper{
-			mode: StandaloneMode,
-		}
+		h := &Helper{}
 		for _, opt := range options {
 			opt(h)
 		}
@@ -52,7 +43,6 @@ func Run(pass *analysis.Pass, options ...Option) []Issue {
 }
 
 type Helper struct {
-	mode          Mode
 	autoSort      bool
 	fixedTagOrder []string // fixed tag order, the others will be sorted by name.
 
@@ -188,38 +178,34 @@ func (w *Helper) align(pass *analysis.Pass) {
 
 			msg := "tag is not aligned, should be: " + unquoteTag
 
-			if w.mode == GolangciLintMode {
-				iss := Issue{
-					Pos:     pass.Fset.Position(field.Tag.Pos()),
-					Message: msg,
-					InlineFix: InlineFix{
-						StartCol:  offsets[i] - 1,
-						Length:    len(field.Tag.Value),
-						NewString: newTagValue,
-					},
-				}
-				w.issues = append(w.issues, iss)
+			iss := Issue{
+				Pos:     pass.Fset.Position(field.Tag.Pos()),
+				Message: msg,
+				InlineFix: InlineFix{
+					StartCol:  offsets[i] - 1,
+					Length:    len(field.Tag.Value),
+					NewString: newTagValue,
+				},
 			}
+			w.issues = append(w.issues, iss)
 
-			if w.mode == StandaloneMode {
-				pass.Report(analysis.Diagnostic{
-					Pos:     field.Tag.Pos(),
-					End:     field.Tag.End(),
-					Message: msg,
-					SuggestedFixes: []analysis.SuggestedFix{
-						{
-							Message: msg,
-							TextEdits: []analysis.TextEdit{
-								{
-									Pos:     field.Tag.Pos(),
-									End:     field.Tag.End(),
-									NewText: []byte(newTagValue),
-								},
+			pass.Report(analysis.Diagnostic{
+				Pos:     field.Tag.Pos(),
+				End:     field.Tag.End(),
+				Message: msg,
+				SuggestedFixes: []analysis.SuggestedFix{
+					{
+						Message: msg,
+						TextEdits: []analysis.TextEdit{
+							{
+								Pos:     field.Tag.Pos(),
+								End:     field.Tag.End(),
+								NewText: []byte(newTagValue),
 							},
 						},
 					},
-				})
-			}
+				},
+			})
 		}
 	}
 }
@@ -227,9 +213,6 @@ func (w *Helper) align(pass *analysis.Pass) {
 // Issues returns all issues found by the analyzer.
 // It is used to integrate with golangci-lint.
 func (w *Helper) Issues() []Issue {
-	if w.mode != GolangciLintMode {
-		panic("Issues() should only be called in golangci-lint mode")
-	}
 	return w.issues
 }
 
