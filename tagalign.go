@@ -55,8 +55,9 @@ type Helper struct {
 	autoSort      bool
 	fixedTagOrder []string // fixed tag order, the others will be sorted by name.
 
-	fieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
-	issues       []Issue
+	singleFields            []*ast.Field
+	consecutiveFieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
+	issues                  []Issue
 }
 
 // Issue is used to integrate with golangci-lint's inline auto fix.
@@ -84,9 +85,13 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 
 	var fs []*ast.Field
 	split := func() {
-		if len(fs) > 1 {
-			w.fieldsGroups = append(w.fieldsGroups, fs)
+		n := len(fs)
+		if n > 1 {
+			w.consecutiveFieldsGroups = append(w.consecutiveFieldsGroups, fs)
+		} else if n == 1 {
+			w.singleFields = append(w.singleFields, fs[0])
 		}
+
 		fs = nil
 	}
 
@@ -127,7 +132,8 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 }
 
 func (w *Helper) align(pass *analysis.Pass) {
-	for _, fields := range w.fieldsGroups {
+	// sort and align fields groups
+	for _, fields := range w.consecutiveFieldsGroups {
 		offsets := make([]int, len(fields))
 
 		var maxTagNum int
@@ -219,6 +225,64 @@ func (w *Helper) align(pass *analysis.Pass) {
 					},
 				})
 			}
+		}
+	}
+
+	// sort single fields
+	for _, field := range w.singleFields {
+		tag, err := strconv.Unquote(field.Tag.Value)
+		if err != nil {
+			continue
+		}
+
+		tags, err := structtag.Parse(tag)
+		if err != nil {
+			continue
+		}
+
+		if w.autoSort {
+			sortBy(w.fixedTagOrder, tags)
+		}
+
+		newTagValue := fmt.Sprintf("`%s`", tags.String())
+		if field.Tag.Value == newTagValue {
+			// nothing changed
+			continue
+		}
+
+		msg := "tag is not aligned , should be: " + tags.String()
+
+		if w.mode == GolangciLintMode {
+			iss := Issue{
+				Pos:     pass.Fset.Position(field.Tag.Pos()),
+				Message: msg,
+				InlineFix: InlineFix{
+					StartCol:  pass.Fset.Position(field.Tag.Pos()).Column - 1,
+					Length:    len(field.Tag.Value),
+					NewString: newTagValue,
+				},
+			}
+			w.issues = append(w.issues, iss)
+		}
+
+		if w.mode == StandaloneMode {
+			pass.Report(analysis.Diagnostic{
+				Pos:     field.Tag.Pos(),
+				End:     field.Tag.End(),
+				Message: msg,
+				SuggestedFixes: []analysis.SuggestedFix{
+					{
+						Message: msg,
+						TextEdits: []analysis.TextEdit{
+							{
+								Pos:     field.Tag.Pos(),
+								End:     field.Tag.End(),
+								NewText: []byte(newTagValue),
+							},
+						},
+					},
+				},
+			})
 		}
 	}
 }
