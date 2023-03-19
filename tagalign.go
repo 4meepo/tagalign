@@ -1,15 +1,12 @@
 package tagalign
 
 import (
+	"fmt"
 	"go/ast"
-	"go/token"
-	"runtime"
 	"strconv"
 	"strings"
 
 	"github.com/fatih/structtag"
-	"github.com/golangci/golangci-lint/pkg/golinters/goanalysis"
-	"github.com/golangci/golangci-lint/pkg/result"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -26,191 +23,149 @@ func NewAnalyzerWithIssuesReporter() *analysis.Analyzer {
 	}
 }
 
-func run(pass *analysis.Pass) ([]goanalysis.Issue, error) {
-	var issues []goanalysis.Issue
+func run(pass *analysis.Pass) error {
 	for _, f := range pass.Files {
-		var groups []group
+		a := analyzer{}
 		ast.Inspect(f, func(n ast.Node) bool {
-			issues = append(issues, checkNode(pass, n)...)
+			a.find(pass, n)
 			return true
 		})
-		processGroups(&groups)
+		a.align(pass)
 	}
 
-	return issues, nil
+	return nil
 }
 
-// field is a group of fields which is continuous in struct.
-type fieldGroup struct {
-	// todo
+type analyzer struct {
+	unalignedFieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
 }
 
-// checkNode check node's type, if it's a struct, check it.
-func checkNode(pass *analysis.Pass, n ast.Node) []goanalysis.Issue {
+func (a *analyzer) find(pass *analysis.Pass, n ast.Node) {
 	v, ok := n.(*ast.StructType)
 	if !ok {
-		return nil
+		return
 	}
 
 	fields := v.Fields.List
 	if len(fields) == 0 {
-		// no need to check non-struct or struct with 0 fields
-		return nil
+		return
 	}
 
-	// check struct
-	var issues []goanalysis.Issue
+	var fs []*ast.Field
+	split := func() {
+		if len(fs) > 1 {
+			a.unalignedFieldsGroups = append(a.unalignedFieldsGroups, fs)
+		}
+		fs = nil
+	}
 
-	// loop fields
-	for _, field := range fields {
+	for i, field := range fields {
 		if field.Tag == nil {
+			// field without tags
+			split()
 			continue
 		}
 
-		tag, err := strconv.Unquote(field.Tag.Value)
-		if err != nil {
-			continue
-		}
-
-		// todo
-		iss := goanalysis.NewIssue(&result.Issue{}, pass)
-		issues = append(issues, iss)
-
-		pass.Report(analysis.Diagnostic{
-			Pos:     field.Pos(),
-			End:     field.End(),
-			Message: "hint",
-		})
-
-		runtime.KeepAlive(tag)
-	}
-
-	return issues
-}
-
-// ======================= deprecated
-
-type group struct {
-	maxTagNum int
-	lines     []*line
-}
-type line struct {
-	field     *ast.Field
-	tags      []string
-	lens      []int
-	spaceLens []int
-	result    string
-}
-
-func findGroupInStruct(fset *token.FileSet, _struct *ast.StructType, groups *[]group, inline ...bool) {
-	lastLineNum := fset.Position(_struct.Fields.List[0].Pos()).Line
-	grp := group{}
-	fieldsNum := len(_struct.Fields.List)
-	for idx, field := range _struct.Fields.List {
-		if field.Tag == nil {
-			continue
-		}
-
-		tag, err := strconv.Unquote(field.Tag.Value)
-		if err != nil {
-			continue
-		}
-
-		tag = strings.TrimSpace(tag)
-
-		tags, err := structtag.Parse(tag)
-		if err != nil {
-			continue
-		}
-
-		// in case the field is a struct type.
-		if _, ok := field.Type.(*ast.StructType); ok {
-			if idx+1 < fieldsNum {
-				lastLineNum = fset.Position(_struct.Fields.List[idx+1].Pos()).Line // todo
-			}
-
-			*groups = append(*groups, grp)
-			grp = group{}
-			continue
-		}
-
-		if grp.maxTagNum < tags.Len() {
-			grp.maxTagNum = tags.Len()
-		}
-
-		ln := &line{
-			field: field,
-		}
-
-		lens := make([]int, 0, tags.Len())
-		for _, key := range tags.Keys() {
-			t, _ := tags.Get(key)
-			lens = append(lens, length(t.String()))
-			ln.tags = append(ln.tags, t.String())
-		}
-
-		ln.lens = lens
-
-		lineNum := fset.Position(field.Pos()).Line
-		if lineNum-lastLineNum >= 2 {
-			*groups = append(*groups, grp)
-			grp = group{
-				maxTagNum: tags.Len(),
+		if i > 0 {
+			preLineNum := pass.Fset.Position(fields[i-1].Tag.Pos()).Line
+			lineNum := pass.Fset.Position(field.Tag.Pos()).Line
+			if lineNum-preLineNum > 1 {
+				// fields with tags are not consecutive, including two case:
+				// 1. splited by lines
+				// 2. splited by a struct
+				split()
+				continue
 			}
 		}
 
-		lastLineNum = lineNum
+		fs = append(fs, field)
 
-		grp.lines = append(grp.lines, ln)
 	}
 
-	if len(grp.lines) > 0 {
-		*groups = append(*groups, grp)
-	}
+	split()
+	return
 }
 
-func processGroups(groups *[]group) {
-	for _, grp := range *groups {
-		if len(grp.lines) <= 1 {
-			continue
-		}
+func (a *analyzer) align(pass *analysis.Pass) {
+	for _, fields := range a.unalignedFieldsGroups {
+		// offsets := make([]int, len(fields))
 
-		for i := 0; i < grp.maxTagNum; i++ {
-			max := process0(grp.lines, i)
-			updateResult(grp.lines, max, i)
-		}
-
-		for _, line := range grp.lines {
-			line.result = "`" + line.result + "`"
-		}
-	}
-}
-
-func process0(lines []*line, idx int) int {
-	max := 0
-	for _, line := range lines {
-		if len(line.lens) > idx {
-			if line.lens[idx] > max {
-				max = line.lens[idx]
+		var maxTagNum int
+		var tagsGroup [][]*structtag.Tag
+		for _, field := range fields {
+			// offsets[i] = pass.Fset.Position(field.Tag.Pos()).Column
+			tag, err := strconv.Unquote(field.Tag.Value)
+			if err != nil {
+				break
 			}
-		}
-	}
 
-	return max
-}
-
-func updateResult(lines []*line, max, idx int) {
-	for _, line := range lines {
-		if len(line.tags) > idx {
-			if l := len(line.lens); l > idx && idx < l-1 {
-				line.result += line.tags[idx] + strings.Repeat(" ", max-line.lens[idx]+1)
-			} else {
-				line.result += line.tags[idx]
+			tags, err := structtag.Parse(tag)
+			if err != nil {
+				break
 			}
+
+			maxTagNum = max(maxTagNum, tags.Len())
+
+			tagsGroup = append(tagsGroup, tags.Tags())
+		}
+
+		// 记录每列 tag的最大长度
+		tagMaxLens := make([]int, maxTagNum)
+
+		for j := 0; j < maxTagNum; j++ {
+			var maxLength int
+			for i := 0; i < len(tagsGroup); i++ {
+				if len(tagsGroup[i]) <= j {
+					// in case of index out of range
+					continue
+				}
+				maxLength = max(maxLength, len(tagsGroup[i][j].String()))
+			}
+			tagMaxLens[j] = maxLength
+		}
+
+		for i, field := range fields {
+			tags := tagsGroup[i]
+
+			newTagBuilder := strings.Builder{}
+			for i, tag := range tags {
+				format := alignFormat(tagMaxLens[i] + 1) // with an extra space
+				newTagBuilder.WriteString(fmt.Sprintf(format, tag.String()))
+			}
+
+			newTagValue := fmt.Sprintf("`%s`", newTagBuilder.String())
+			if field.Tag.Value == newTagValue {
+				// nothing changed
+				continue
+			}
+
+			pass.Report(analysis.Diagnostic{
+				Pos:     field.Tag.Pos(),
+				End:     field.Tag.End(),
+				Message: "tag is not aligned, should be: " + newTagValue, SuggestedFixes: []analysis.SuggestedFix{
+					{
+						Message: "align tag",
+						TextEdits: []analysis.TextEdit{
+							{
+								Pos:     field.Tag.Pos(),
+								End:     field.Tag.End(),
+								NewText: []byte(newTagValue),
+							},
+						},
+					},
+				},
+			})
 		}
 	}
 }
 
-func length(s string) int {
-	return len([]rune(s))
+func alignFormat(length int) string {
+	return "%" + fmt.Sprintf(fmt.Sprintf("-%ds", length))
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
