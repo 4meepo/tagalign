@@ -1,11 +1,15 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+name: goreleaser
 
-name: Release
 on:
-  create:
+  push:
+    # run only against tags
     tags:
-    - v*
+      - '*'
+
+permissions:
+  contents: write
+  # packages: write
+  # issues: write
 
 jobs:
   goreleaser:
