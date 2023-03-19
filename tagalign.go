@@ -96,6 +96,11 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 				// 1. splited by lines
 				// 2. splited by a struct
 				split()
+
+				// check if the field is a struct
+				if _, ok := field.Type.(*ast.StructType); ok {
+					continue
+				}
 			}
 		}
 
