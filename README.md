@@ -1,7 +1,7 @@
 # Golang Tag Align
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/4meepo/tagalign?style=flat-square)
-[![codecov](https://codecov.io/gh/4meepo/tagalign/branch/main/graph/badge.svg)](https://app.codecov.io/github/4meepo/tagalign)
+[![codecov](https://codecov.io/github/4meepo/tagalign/branch/main/graph/badge.svg?token=1R1T61UNBQ)](https://codecov.io/github/4meepo/tagalign)
 [![GoDoc](https://godoc.org/github.com/4meepo/tagalign?status.svg)](https://pkg.go.dev/github.com/4meepo/tagalign)
 [![Go Report Card](https://goreportcard.com/badge/github.com/4meepo/tagalign)](https://goreportcard.com/report/github.com/4meepo/tagalign)
 
