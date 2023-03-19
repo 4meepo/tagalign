@@ -1,10 +1,8 @@
-# Golang Tag Align Linter
+# Golang Tag Align
 
-This linter is used to align golang struct's tags. It is built for integrating with [golangci-lint](https://golangci-lint.run/usage/quick-start/).
+TagAlign is used to align and sort tags in golang struct. It can make the struct more readable and easy to maintain.
 
-For example:
-
-Before aligned:
+For example, this struct
 
 ```go
 type FooBar struct {
@@ -21,7 +19,7 @@ type FooBar struct {
 }
 ```
 
-After aligned:
+can be aligned to:
 
 ```go
 type FooBar struct {
@@ -38,7 +36,7 @@ type FooBar struct {
 }
 ```
 
-In addition to alignment, it can also sort tags with fixed order. For example, if we enable auto-sort with fixed order `json,xml`, the following code
+In addition to alignment, it can also sort tags with fixed order. If we enable auto-sort with fixed order `json,xml`, the following code
 
 ```go
 type SortExample struct {
