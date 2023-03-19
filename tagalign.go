@@ -89,6 +89,11 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 		}
 
 		if i > 0 {
+			if fields[i-1].Tag == nil {
+				// if previous filed do not have a tag
+				fs = append(fs, field)
+				continue
+			}
 			preLineNum := pass.Fset.Position(fields[i-1].Tag.Pos()).Line
 			lineNum := pass.Fset.Position(field.Tag.Pos()).Line
 			if lineNum-preLineNum > 1 {
@@ -160,13 +165,14 @@ func (w *Helper) align(pass *analysis.Pass) {
 				newTagBuilder.WriteString(fmt.Sprintf(format, tag.String()))
 			}
 
-			newTagValue := fmt.Sprintf("`%s`", strings.TrimSpace(newTagBuilder.String()))
+			unquoteTag := strings.TrimSpace(newTagBuilder.String())
+			newTagValue := fmt.Sprintf("`%s`", unquoteTag)
 			if field.Tag.Value == newTagValue {
 				// nothing changed
 				continue
 			}
 
-			msg := "tag is not aligned, should be: " + newTagValue
+			msg := "tag is not aligned, should be: " + unquoteTag
 
 			if w.mode == GolangciLintMode {
 				iss := Issue{

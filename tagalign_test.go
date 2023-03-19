@@ -8,7 +8,7 @@ import (
 )
 
 func TestAnalyzer(t *testing.T) {
-	a := NewAnalyzer(GolangciLintMode)
+	a := NewAnalyzer(StandaloneMode)
 	analysistest.Run(t, analysistest.TestData(), a)
 }
 
