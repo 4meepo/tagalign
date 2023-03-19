@@ -56,7 +56,7 @@ type SortExample struct {
 }
 ```
 
-The fixed order is `json,xml`, so the tags `json` and `xml` will be sorted and aligned first, and the rest tags will be sorted and aligned in the order of appearance.
+The fixed order is `json,xml`, so the tags `json` and `xml` will be sorted and aligned first, and the rest tags will be sorted and aligned in the dictionary order.
 
 ## Install
 
