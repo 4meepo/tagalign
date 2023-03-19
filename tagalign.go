@@ -156,7 +156,7 @@ func (w *Helper) align(pass *analysis.Pass) {
 				newTagBuilder.WriteString(fmt.Sprintf(format, tag.String()))
 			}
 
-			newTagValue := strings.TrimSpace(fmt.Sprintf("`%s`", newTagBuilder.String()))
+			newTagValue := fmt.Sprintf("`%s`", strings.TrimSpace(newTagBuilder.String()))
 			if field.Tag.Value == newTagValue {
 				// nothing changed
 				continue
