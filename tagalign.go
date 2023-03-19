@@ -45,9 +45,9 @@ func RunTagAlign(pass *analysis.Pass, mode Mode) []Issue {
 }
 
 type Helper struct {
-	mode                  Mode
-	unalignedFieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
-	issues                []Issue
+	mode         Mode
+	fieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
+	issues       []Issue
 }
 
 // Issue is used to integrate with golangci-lint's inline auto fix.
@@ -76,7 +76,7 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 	var fs []*ast.Field
 	split := func() {
 		if len(fs) > 1 {
-			w.unalignedFieldsGroups = append(w.unalignedFieldsGroups, fs)
+			w.fieldsGroups = append(w.fieldsGroups, fs)
 		}
 		fs = nil
 	}
@@ -96,7 +96,6 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 				// 1. splited by lines
 				// 2. splited by a struct
 				split()
-				continue
 			}
 		}
 
@@ -109,7 +108,7 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 }
 
 func (w *Helper) align(pass *analysis.Pass) {
-	for _, fields := range w.unalignedFieldsGroups {
+	for _, fields := range w.fieldsGroups {
 		offsets := make([]int, len(fields))
 
 		var maxTagNum int
