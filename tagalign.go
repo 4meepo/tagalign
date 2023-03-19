@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"log"
 	"sort"
 	"strconv"
 	"strings"
@@ -225,9 +226,7 @@ func (w *Helper) align(pass *analysis.Pass) {
 // Issues returns all issues found by the analyzer.
 // It is used to integrate with golangci-lint.
 func (w *Helper) Issues() []Issue {
-	if w.mode != GolangciLintMode {
-		panic("Issues() should only be called in golangci-lint mode")
-	}
+	log.Println("tagalign 's Issues() should only be called in golangci-lint mode")
 	return w.issues
 }
 
