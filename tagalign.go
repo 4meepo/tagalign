@@ -57,7 +57,7 @@ type Issue struct {
 	InlineFix InlineFix
 }
 type InlineFix struct {
-	StartCol  int
+	StartCol  int //zero-based
 	Length    int
 	NewString string
 }
@@ -169,7 +169,7 @@ func (w *Helper) align(pass *analysis.Pass) {
 					Pos:     pass.Fset.Position(field.Tag.Pos()),
 					Message: msg,
 					InlineFix: InlineFix{
-						StartCol:  offsets[i],
+						StartCol:  offsets[i] - 1,
 						Length:    len(field.Tag.Value),
 						NewString: newTagValue,
 					},
