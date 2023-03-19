@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/fatih/structtag v1.2.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	golang.org/x/tools v0.7.0
 )
 

@@ -9,6 +9,6 @@ type FooBar struct {
 		Foo    int    `json:"foo"    yaml:"foo"          validate:"required"`
 		Bar222 string `json:"bar222" validate:"required" yaml:"bar"`
 	} `json:"foo_bar" validate:"required"`
-	BarFoo    string `json:"bar_foo"   validate:"required"`
+	BarFoo    string `json:"bar_foo"     validate:"required"`
 	BarFooBar string `json:"bar_foo_bar" validate:"required"`
 }

@@ -8,8 +8,8 @@ import (
 )
 
 func TestAnalyzer(t *testing.T) {
-	a := NewAnalyzerWithIssuesReporter()
-	analysistest.Run(t, analysistest.TestData(), a)
+	a := NewAnalyzerWrapper()
+	analysistest.Run(t, analysistest.TestData(), a.Unwrap())
 }
 
 func TestSprintf(t *testing.T) {
