@@ -13,7 +13,7 @@ func main() {
 	var autoSort bool
 	var fixedOrder string
 
-	// Just for declase
+	// just for declaration
 	flag.BoolVar(&autoSort, "auto-sort", false, "enable auto sort tags")
 	flag.StringVar(&fixedOrder, "fixed-order", "", "specify the fixed order of tags, the other tags will be sorted by name")
 
