@@ -1,11 +1,11 @@
-# Golang Tag Align
+# Go Tag Align
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/4meepo/tagalign?style=flat-square)
 [![codecov](https://codecov.io/gh/4meepo/tagalign/branch/main/graph/badge.svg)](https://app.codecov.io/github/4meepo/tagalign)
 [![GoDoc](https://godoc.org/github.com/4meepo/tagalign?status.svg)](https://pkg.go.dev/github.com/4meepo/tagalign)
 [![Go Report Card](https://goreportcard.com/badge/github.com/4meepo/tagalign)](https://goreportcard.com/report/github.com/4meepo/tagalign)
 
-TagAlign is used to align and sort tags in golang struct. It can make the struct more readable and easy to maintain.
+TagAlign is used to align and sort tags in Go struct. It can make the struct more readable and easier to maintain.
 
 For example, this struct
 
@@ -86,4 +86,4 @@ tagalign -fix -auto-sort -fixed-order "json,xml" {package path}
 
 [Autofix Example](https://github.com/golangci/golangci-lint/pull/2450/files)
 
-[Integraing](https://disaev.me/p/writing-useful-go-analysis-linter/#integrating)
+[Integrating](https://disaev.me/p/writing-useful-go-analysis-linter/#integrating)
