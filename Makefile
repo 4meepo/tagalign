@@ -1,7 +1,7 @@
-.PHONY: run
-run:
-	go run cmd/tagalign/main.go ./...
-
 .PHONY: lint
 lint:
 	golangci-lint run ./...
+
+.PHONY: build
+build:
+	go build -o tagalign cmd/tagalign/tagalign.go
