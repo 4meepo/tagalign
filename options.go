@@ -9,11 +9,20 @@ func WithMode(mode Mode) Option {
 	}
 }
 
-// WithAutoSort enable auto sort tags.
-// Param fixedOrder specify the fixed order of tags, the other tags will be sorted by name.
-func WithAutoSort(fixedOrder ...string) Option {
+// WithSort enable tags sort.
+// fixedOrder specify the order of tags, the other tags will be sorted by name.
+// Sory is disabled by default.
+func WithSort(fixedOrder ...string) Option {
 	return func(h *Helper) {
-		h.autoSort = true
+		h.sort = true
 		h.fixedTagOrder = fixedOrder
+	}
+}
+
+// WithAlign configure whether enable tags align.
+// Align is enabled by default.
+func WithAlign(enabled bool) Option {
+	return func(h *Helper) {
+		h.align = enabled
 	}
 }

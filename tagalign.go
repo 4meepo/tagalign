@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 	"log"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -35,25 +36,35 @@ func NewAnalyzer(options ...Option) *analysis.Analyzer {
 func Run(pass *analysis.Pass, options ...Option) []Issue {
 	var issues []Issue
 	for _, f := range pass.Files {
-		h := &Helper{mode: StandaloneMode}
+		h := &Helper{
+			mode:  StandaloneMode,
+			align: true,
+		}
 		for _, opt := range options {
 			opt(h)
+		}
+
+		if h.align == false && h.sort == false {
+			// do nothing
+			return nil
 		}
 
 		ast.Inspect(f, func(n ast.Node) bool {
 			h.find(pass, n)
 			return true
 		})
-		h.align(pass)
+		h.Align(pass)
 		issues = append(issues, h.issues...)
 	}
 	return issues
 }
 
 type Helper struct {
-	mode          Mode
-	autoSort      bool
-	fixedTagOrder []string // fixed tag order, the others will be sorted by name.
+	mode Mode
+
+	align         bool     // whether enable tags align.
+	sort          bool     // whether enable tags sort.
+	fixedTagOrder []string // the order of tags, the other tags will be sorted by name.
 
 	singleFields            []*ast.Field
 	consecutiveFieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
@@ -131,13 +142,13 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 	return
 }
 
-func (w *Helper) align(pass *analysis.Pass) {
-	// sort and align fields groups
+func (w *Helper) Align(pass *analysis.Pass) {
+	// process grouped fields
 	for _, fields := range w.consecutiveFieldsGroups {
 		offsets := make([]int, len(fields))
 
 		var maxTagNum int
-		var tagsGroup [][]*structtag.Tag
+		var tagsGroup, notSortedTagsGroup [][]*structtag.Tag
 		for i, field := range fields {
 			offsets[i] = pass.Fset.Position(field.Tag.Pos()).Column
 			tag, err := strconv.Unquote(field.Tag.Value)
@@ -152,13 +163,15 @@ func (w *Helper) align(pass *analysis.Pass) {
 
 			maxTagNum = max(maxTagNum, tags.Len())
 
-			if w.autoSort {
+			if w.sort {
+				notSortedTagsGroup = append(notSortedTagsGroup, tags.Tags())
 				sortBy(w.fixedTagOrder, tags)
 			}
 
 			tagsGroup = append(tagsGroup, tags.Tags())
 		}
 
+		// if w.align{
 		// record the max length of each column tag
 		tagMaxLens := make([]int, maxTagNum)
 
@@ -177,14 +190,29 @@ func (w *Helper) align(pass *analysis.Pass) {
 		for i, field := range fields {
 			tags := tagsGroup[i]
 
-			// new new builder
-			newTagBuilder := strings.Builder{}
-			for i, tag := range tags {
-				format := alignFormat(tagMaxLens[i] + 1) // with an extra space
-				newTagBuilder.WriteString(fmt.Sprintf(format, tag.String()))
+			var newTagStr string
+			if w.align {
+				// if align enabled, align tags.
+				newTagBuilder := strings.Builder{}
+				for i, tag := range tags {
+					format := alignFormat(tagMaxLens[i] + 1) // with an extra space
+					newTagBuilder.WriteString(fmt.Sprintf(format, tag.String()))
+				}
+				newTagStr = newTagBuilder.String()
+			} else {
+				// otherwise check if tags order changed
+				if w.sort && reflect.DeepEqual(notSortedTagsGroup[i], tags) {
+					// if tags order not changed, do nothing
+					continue
+				}
+				tagsStr := make([]string, len(tags))
+				for i, tag := range tags {
+					tagsStr[i] = tag.String()
+				}
+				newTagStr = strings.Join(tagsStr, " ")
 			}
 
-			unquoteTag := strings.TrimSpace(newTagBuilder.String())
+			unquoteTag := strings.TrimSpace(newTagStr)
 			newTagValue := fmt.Sprintf("`%s`", unquoteTag)
 			if field.Tag.Value == newTagValue {
 				// nothing changed
@@ -228,7 +256,7 @@ func (w *Helper) align(pass *analysis.Pass) {
 		}
 	}
 
-	// sort single fields
+	// process single fields
 	for _, field := range w.singleFields {
 		tag, err := strconv.Unquote(field.Tag.Value)
 		if err != nil {
@@ -239,9 +267,14 @@ func (w *Helper) align(pass *analysis.Pass) {
 		if err != nil {
 			continue
 		}
-
-		if w.autoSort {
+		originalTags := append([]*structtag.Tag(nil), tags.Tags()...)
+		if w.sort {
 			sortBy(w.fixedTagOrder, tags)
+		}
+
+		if reflect.DeepEqual(originalTags, tags.Tags()) {
+			// if tags order not changed, do nothing
+			continue
 		}
 
 		newTagValue := fmt.Sprintf("`%s`", tags.String())

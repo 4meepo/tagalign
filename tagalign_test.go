@@ -19,7 +19,7 @@ func TestAnalyzer(t *testing.T) {
 }
 func TestAnalyzerWithOrder(t *testing.T) {
 	// sort with fixed order
-	a := NewAnalyzer(WithAutoSort("json", "yaml", "xml"))
+	a := NewAnalyzer(WithSort("json", "yaml", "xml"))
 	sort, err := filepath.Abs("testdata/sort")
 	assert.NoError(t, err)
 	analysistest.Run(t, sort, a)
@@ -40,4 +40,12 @@ func Test_sortByFixedOrder(t *testing.T) {
 	assert.Equal(t, "binding", tags.Tags()[3].Key)
 	assert.Equal(t, "gorm", tags.Tags()[4].Key)
 	assert.Equal(t, "zip", tags.Tags()[5].Key)
+}
+
+func Test_disableAlign(t *testing.T) {
+	// test disable align but enable sort
+	a := NewAnalyzer(WithAlign(false), WithSort("xml", "json", "yaml"))
+	sort, err := filepath.Abs("testdata/noalign")
+	assert.NoError(t, err)
+	analysistest.Run(t, sort, a)
 }
