@@ -44,7 +44,7 @@ func Run(pass *analysis.Pass, options ...Option) []Issue {
 			opt(h)
 		}
 
-		if h.align == false && h.sort == false {
+		if !h.align && !h.sort {
 			// do nothing
 			return nil
 		}
@@ -53,7 +53,7 @@ func Run(pass *analysis.Pass, options ...Option) []Issue {
 			h.find(pass, n)
 			return true
 		})
-		h.Align(pass)
+		h.Process(pass)
 		issues = append(issues, h.issues...)
 	}
 	return issues
@@ -78,7 +78,7 @@ type Issue struct {
 	InlineFix InlineFix
 }
 type InlineFix struct {
-	StartCol  int //zero-based
+	StartCol  int // zero-based
 	Length    int
 	NewString string
 }
@@ -94,7 +94,7 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 		return
 	}
 
-	var fs []*ast.Field
+	fs := make([]*ast.Field, 0)
 	split := func() {
 		n := len(fs)
 		if n > 1 {
@@ -135,14 +135,47 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 		}
 
 		fs = append(fs, field)
-
 	}
 
 	split()
-	return
 }
 
-func (w *Helper) Align(pass *analysis.Pass) {
+func (w *Helper) report(pass *analysis.Pass, field *ast.Field, startCol int, msg, replaceStr string) {
+	if w.mode == GolangciLintMode {
+		iss := Issue{
+			Pos:     pass.Fset.Position(field.Tag.Pos()),
+			Message: msg,
+			InlineFix: InlineFix{
+				StartCol:  startCol,
+				Length:    len(field.Tag.Value),
+				NewString: replaceStr,
+			},
+		}
+		w.issues = append(w.issues, iss)
+	}
+
+	if w.mode == StandaloneMode {
+		pass.Report(analysis.Diagnostic{
+			Pos:     field.Tag.Pos(),
+			End:     field.Tag.End(),
+			Message: msg,
+			SuggestedFixes: []analysis.SuggestedFix{
+				{
+					Message: msg,
+					TextEdits: []analysis.TextEdit{
+						{
+							Pos:     field.Tag.Pos(),
+							End:     field.Tag.End(),
+							NewText: []byte(replaceStr),
+						},
+					},
+				},
+			},
+		})
+	}
+}
+
+func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 	// process grouped fields
 	for _, fields := range w.consecutiveFieldsGroups {
 		offsets := make([]int, len(fields))
@@ -221,38 +254,7 @@ func (w *Helper) Align(pass *analysis.Pass) {
 
 			msg := "tag is not aligned, should be: " + unquoteTag
 
-			if w.mode == GolangciLintMode {
-				iss := Issue{
-					Pos:     pass.Fset.Position(field.Tag.Pos()),
-					Message: msg,
-					InlineFix: InlineFix{
-						StartCol:  offsets[i] - 1,
-						Length:    len(field.Tag.Value),
-						NewString: newTagValue,
-					},
-				}
-				w.issues = append(w.issues, iss)
-			}
-
-			if w.mode == StandaloneMode {
-				pass.Report(analysis.Diagnostic{
-					Pos:     field.Tag.Pos(),
-					End:     field.Tag.End(),
-					Message: msg,
-					SuggestedFixes: []analysis.SuggestedFix{
-						{
-							Message: msg,
-							TextEdits: []analysis.TextEdit{
-								{
-									Pos:     field.Tag.Pos(),
-									End:     field.Tag.End(),
-									NewText: []byte(newTagValue),
-								},
-							},
-						},
-					},
-				})
-			}
+			w.report(pass, field, offsets[i]-1, msg, newTagValue)
 		}
 	}
 
@@ -285,38 +287,7 @@ func (w *Helper) Align(pass *analysis.Pass) {
 
 		msg := "tag is not aligned , should be: " + tags.String()
 
-		if w.mode == GolangciLintMode {
-			iss := Issue{
-				Pos:     pass.Fset.Position(field.Tag.Pos()),
-				Message: msg,
-				InlineFix: InlineFix{
-					StartCol:  pass.Fset.Position(field.Tag.Pos()).Column - 1,
-					Length:    len(field.Tag.Value),
-					NewString: newTagValue,
-				},
-			}
-			w.issues = append(w.issues, iss)
-		}
-
-		if w.mode == StandaloneMode {
-			pass.Report(analysis.Diagnostic{
-				Pos:     field.Tag.Pos(),
-				End:     field.Tag.End(),
-				Message: msg,
-				SuggestedFixes: []analysis.SuggestedFix{
-					{
-						Message: msg,
-						TextEdits: []analysis.TextEdit{
-							{
-								Pos:     field.Tag.Pos(),
-								End:     field.Tag.End(),
-								NewText: []byte(newTagValue),
-							},
-						},
-					},
-				},
-			})
-		}
+		w.report(pass, field, pass.Fset.Position(field.Tag.Pos()).Column-1, msg, newTagValue)
 	}
 }
 
@@ -364,7 +335,7 @@ func findIndex(s []string, e string) int {
 }
 
 func alignFormat(length int) string {
-	return "%" + fmt.Sprintf(fmt.Sprintf("-%ds", length))
+	return "%" + fmt.Sprintf("-%ds", length)
 }
 
 func max(a, b int) int {

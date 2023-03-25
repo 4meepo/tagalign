@@ -14,7 +14,7 @@ func main() {
 	var sort bool
 	var order string
 
-	// Just for declase
+	// Just for declare flags.
 	flag.BoolVar(&align, "align", false, "Whether enable tags align. Default is true.")
 	flag.BoolVar(&sort, "sort", false, "Whether enable tags sort. Default is false.")
 	flag.StringVar(&order, "order", "", "Specify the order of tags, the other tags will be sorted by name.")

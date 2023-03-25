@@ -15,7 +15,6 @@ func TestAnalyzer(t *testing.T) {
 	unsort, err := filepath.Abs("testdata/unsort")
 	assert.NoError(t, err)
 	analysistest.Run(t, unsort, a)
-
 }
 func TestAnalyzerWithOrder(t *testing.T) {
 	// sort with fixed order
