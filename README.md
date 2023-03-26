@@ -86,6 +86,8 @@ tagalign -fix -noalign -sort -order "json,xml" {package path}
 tagalign -fix -sort -order "json,xml" {package path}
 ```
 
+TODO: integrate with golangci-lint
+
 ## Reference
 
 [Golang AST Visualizer](http://goast.yuroyoro.net/)
