@@ -41,7 +41,7 @@ type FooBar struct {
 }
 ```
 
-In addition to alignment, it can also sort tags with fixed order. If we enable auto-sort with fixed order `json,xml`, the following code
+In addition to alignment, it can also sort tags with fixed order. If we enable sort with fixed order `json,xml`, the following code
 
 ```go
 type SortExample struct {
@@ -71,11 +71,19 @@ go install github.com/4meepo/tagalign/cmd/tagalign
 
 ## Usage
 
+By default tagalign will only align tags, but not sort them. But alignment and sort can work together or separately.
+
+If you don't want to align tags, you can use `-noalign` to disable alignment.
+
+You can use `-sort` to enable sort and `-order` to set the fixed order of tags.
+
 ```bash
-# basic
+# Only align tags.
 tagalign -fix {package path}
-# enable auto sort with fixed order
-tagalign -fix -auto-sort -fixed-order "json,xml" {package path}
+# Only sort tags with fixed order.
+tagalign -fix -noalign -sort -order "json,xml" {package path}
+# Align and sort together.
+tagalign -fix -sort -order "json,xml" {package path}
 ```
 
 ## Reference

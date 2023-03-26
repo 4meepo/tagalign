@@ -10,20 +10,20 @@ import (
 )
 
 func main() {
-	var align bool
+	var noalign bool
 	var sort bool
 	var order string
 
-	// Just for declare flags.
-	flag.BoolVar(&align, "align", false, "Whether enable tags align. Default is true.")
+	// just for declaration.
+	flag.BoolVar(&noalign, "noalign", false, "Whether disable tags align. Default is false.")
 	flag.BoolVar(&sort, "sort", false, "Whether enable tags sort. Default is false.")
 	flag.StringVar(&order, "order", "", "Specify the order of tags, the other tags will be sorted by name.")
 
 	// read from os.Args
 	args := os.Args
 	for i, arg := range args {
-		if arg == "-align" {
-			align = true
+		if arg == "-noalign" {
+			noalign = true
 		}
 		if arg == "-sort" {
 			sort = true
@@ -34,8 +34,15 @@ func main() {
 	}
 
 	var options []tagalign.Option
+	if noalign {
+		options = append(options, tagalign.WithAlign(false))
+	}
 	if sort {
-		options = append(options, tagalign.WithAlign(align), tagalign.WithSort(strings.Split(order, ",")...))
+		var orders []string
+		if order != "" {
+			orders = strings.Split(order, ",")
+		}
+		options = append(options, tagalign.WithSort(orders...))
 	}
 
 	singlechecker.Main(tagalign.NewAnalyzer(options...))
