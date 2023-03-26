@@ -197,7 +197,11 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 			maxTagNum = max(maxTagNum, tags.Len())
 
 			if w.sort {
-				notSortedTagsGroup = append(notSortedTagsGroup, tags.Tags())
+				cp := make([]*structtag.Tag, tags.Len())
+				for i, tag := range tags.Tags() {
+					cp[i] = tag
+				}
+				notSortedTagsGroup = append(notSortedTagsGroup, cp)
 				sortBy(w.fixedTagOrder, tags)
 			}
 
