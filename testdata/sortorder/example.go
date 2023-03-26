@@ -1,6 +1,6 @@
-package noalign
+package sortorder
 
-type SortOnlyExample struct {
+type SortWithOrderExample struct {
 	// not aligned but sorted, should not be reported
 	Foo    int `xml:"baz" json:"foo,omitempty"     yaml:"bar"     binding:"required"      gorm:"column:foo" validate:"required"     zip:"foo" `
 	Bar    int `xml:"bar"        json:"bar,omitempty" yaml:"foo"            gorm:"column:bar"  validate:"required"     zip:"bar" `

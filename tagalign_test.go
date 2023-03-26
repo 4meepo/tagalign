@@ -9,17 +9,33 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func TestAnalyzer(t *testing.T) {
-	// unsort example
+func Test_alignOnly(t *testing.T) {
+	// only align
 	a := NewAnalyzer()
-	unsort, err := filepath.Abs("testdata/unsort")
+	unsort, err := filepath.Abs("testdata/align")
 	assert.NoError(t, err)
 	analysistest.Run(t, unsort, a)
 }
-func TestAnalyzerWithOrder(t *testing.T) {
-	// sort with fixed order
-	a := NewAnalyzer(WithSort("json", "yaml", "xml"))
+
+func Test_sortOnly(t *testing.T) {
+	a := NewAnalyzer(WithAlign(false), WithSort(nil...))
 	sort, err := filepath.Abs("testdata/sort")
+	assert.NoError(t, err)
+	analysistest.Run(t, sort, a)
+}
+
+func Test_sortWithOrder(t *testing.T) {
+	// test disable align but enable sort
+	a := NewAnalyzer(WithAlign(false), WithSort("xml", "json", "yaml"))
+	sort, err := filepath.Abs("testdata/sortorder")
+	assert.NoError(t, err)
+	analysistest.Run(t, sort, a)
+}
+
+func Test_alignAndSortWithOrder(t *testing.T) {
+	// align and sort with fixed order
+	a := NewAnalyzer(WithSort("json", "yaml", "xml"))
+	sort, err := filepath.Abs("testdata/alignsortorder")
 	assert.NoError(t, err)
 	analysistest.Run(t, sort, a)
 }
@@ -28,7 +44,7 @@ func TestSprintf(t *testing.T) {
 	assert.Equal(t, "%-20s", format)
 }
 
-func Test_sortByFixedOrder(t *testing.T) {
+func Test_sortBy(t *testing.T) {
 	tags, err := structtag.Parse(`zip:"foo" json:"foo,omitempty" yaml:"bar" binding:"required" xml:"baz" gorm:"column:foo"`)
 	assert.NoError(t, err)
 
@@ -39,12 +55,4 @@ func Test_sortByFixedOrder(t *testing.T) {
 	assert.Equal(t, "binding", tags.Tags()[3].Key)
 	assert.Equal(t, "gorm", tags.Tags()[4].Key)
 	assert.Equal(t, "zip", tags.Tags()[5].Key)
-}
-
-func Test_disableAlign(t *testing.T) {
-	// test disable align but enable sort
-	a := NewAnalyzer(WithAlign(false), WithSort("xml", "json", "yaml"))
-	sort, err := filepath.Abs("testdata/noalign")
-	assert.NoError(t, err)
-	analysistest.Run(t, sort, a)
 }
