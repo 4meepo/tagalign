@@ -45,7 +45,7 @@ type FooBar struct {
 
 ## Usage
 
-By default tagalign will only align tags, but not sort them. But alignment and sort can work together or separately.
+By default tagalign will only align tags, but not sort them. But alignment and [sort feature](https://github.com/4meepo/tagalign#sort-tag) can work together or separately.
 
 * As a Golangci Linter (Recommended)
 
