@@ -41,6 +41,35 @@ type FooBar struct {
 }
 ```
 
+
+
+## Usage
+
+By default tagalign will only align tags, but not sort them. But alignment and sort can work together or separately.
+
+* As a Golangci Linter (Recommended)
+
+    Tagalign is a built-in linter in [Golangci Lint](https://golangci-lint.run/usage/linters/#tagalign) since `v1.53`.
+    > Note: In order to have the best experience,  add the `--fix` flag to `golangci-lint` to enabled the aufofix feature.
+
+* Standalone Mode
+
+    Install it using `GO` or download it [here](https://github.com/4meepo/tagalign/releases).
+    ```bash
+    go install github.com/4meepo/tagalign/cmd/tagalign
+    ```
+    Run it in your terminal.
+    ```bash
+    # Only align tags.
+    tagalign -fix {package path}
+    # Only sort tags with fixed order.
+    tagalign -fix -noalign -sort -order "json,xml" {package path}
+    # Align and sort together.
+    tagalign -fix -sort -order "json,xml" {package path}
+    ```
+
+## Sort Tag
+
 In addition to alignment, it can also sort tags with fixed order. If we enable sort with fixed order `json,xml`, the following code
 
 ```go
@@ -62,31 +91,6 @@ type SortExample struct {
 ```
 
 The fixed order is `json,xml`, so the tags `json` and `xml` will be sorted and aligned first, and the rest tags will be sorted and aligned in the dictionary order.
-
-## Install
-
-```bash
-go install github.com/4meepo/tagalign/cmd/tagalign
-```
-
-## Usage
-
-By default tagalign will only align tags, but not sort them. But alignment and sort can work together or separately.
-
-If you don't want to align tags, you can use `-noalign` to disable alignment.
-
-You can use `-sort` to enable sort and `-order` to set the fixed order of tags.
-
-```bash
-# Only align tags.
-tagalign -fix {package path}
-# Only sort tags with fixed order.
-tagalign -fix -noalign -sort -order "json,xml" {package path}
-# Align and sort together.
-tagalign -fix -sort -order "json,xml" {package path}
-```
-
-TODO: integrate with golangci-lint
 
 ## Reference
 
