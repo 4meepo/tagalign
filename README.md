@@ -56,7 +56,7 @@ By default tagalign will only align tags, but not sort them. But alignment and [
 
     Install it using `GO` or download it [here](https://github.com/4meepo/tagalign/releases).
     ```bash
-    go install github.com/4meepo/tagalign/cmd/tagalign
+    go install github.com/4meepo/tagalign/cmd/tagalign@latest
     ```
     Run it in your terminal.
     ```bash
