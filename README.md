@@ -103,8 +103,8 @@ Sometimes, you may want to align your tags in strict style. In this style, the t
 
 ```go
 type StrictStyleExample struct {
- Foo int ` xml:"baz" yaml:"bar" zip:"foo" binding:"required" gorm:"column:foo"  validate:"required"`
- Bar int `validate:"required" gorm:"column:bar"  yaml:"foo" xml:"bar" binding:"required" json:"bar,omitempty" `
+    Foo int ` xml:"baz" yaml:"bar" zip:"foo" binding:"required" gorm:"column:foo"  validate:"required"`
+    Bar int `validate:"required" gorm:"column:bar"  yaml:"foo" xml:"bar" binding:"required" json:"bar,omitempty" `
 }
 ```
 
@@ -112,8 +112,8 @@ will be aligned to
 
 ```go
 type StrictStyleExample struct {
- Foo int `binding:"required" gorm:"column:foo"                      validate:"required" xml:"baz" yaml:"bar" zip:"foo"`
- Bar int `binding:"required" gorm:"column:bar" json:"bar,omitempty" validate:"required" xml:"bar" yaml:"foo"`
+    Foo int `binding:"required" gorm:"column:foo"                      validate:"required" xml:"baz" yaml:"bar" zip:"foo"`
+    Bar int `binding:"required" gorm:"column:bar" json:"bar,omitempty" validate:"required" xml:"bar" yaml:"foo"`
 }
 ```
 
