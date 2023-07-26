@@ -50,8 +50,13 @@ func main() {
 		options = append(options, tagalign.WithSort(orders...))
 	}
 	if strict {
-		if noalign || !sort {
-			panic("`-strict` flag must be used with `-align` and `-sort` together")
+		if noalign {
+			// cannot use noalign and strict together.
+			panic("cannot use `-noalign` and `-strict` together.")
+		}
+		if !sort {
+			// cannot use strict without sort.
+			panic("cannot use `-strict` without `-sort`.")
 		}
 		options = append(options, tagalign.WithStrictStyle())
 	}

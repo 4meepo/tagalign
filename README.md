@@ -41,8 +41,6 @@ type FooBar struct {
 }
 ```
 
-
-
 ## Usage
 
 By default tagalign will only align tags, but not sort them. But alignment and [sort feature](https://github.com/4meepo/tagalign#sort-tag) can work together or separately.
@@ -55,10 +53,13 @@ By default tagalign will only align tags, but not sort them. But alignment and [
 * Standalone Mode
 
     Install it using `GO` or download it [here](https://github.com/4meepo/tagalign/releases).
+
     ```bash
     go install github.com/4meepo/tagalign/cmd/tagalign@latest
     ```
+
     Run it in your terminal.
+
     ```bash
     # Only align tags.
     tagalign -fix {package path}
@@ -68,7 +69,9 @@ By default tagalign will only align tags, but not sort them. But alignment and [
     tagalign -fix -sort -order "json,xml" {package path}
     ```
 
-## Sort Tag
+## Advanced Features
+
+### Sort Tag
 
 In addition to alignment, it can also sort tags with fixed order. If we enable sort with fixed order `json,xml`, the following code
 
@@ -91,6 +94,28 @@ type SortExample struct {
 ```
 
 The fixed order is `json,xml`, so the tags `json` and `xml` will be sorted and aligned first, and the rest tags will be sorted and aligned in the dictionary order.
+
+### Strict Style
+
+Sometimes, you may want to align your tags in strict style. In this style, the tags will be sorted and aligned in the dictionary order, and the tags with the same name will be aligned together. For example, the following code
+
+```go
+type StrictStyleExample struct {
+ Foo int ` xml:"baz" yaml:"bar" zip:"foo" binding:"required" gorm:"column:foo"  validate:"required"`
+ Bar int `validate:"required" gorm:"column:bar"  yaml:"foo" xml:"bar" binding:"required" json:"bar,omitempty" `
+}
+```
+
+will be aligned to
+
+```go
+type StrictStyleExample struct {
+ Foo int `binding:"required" gorm:"column:foo"                      validate:"required" xml:"baz" yaml:"bar" zip:"foo"`
+ Bar int `binding:"required" gorm:"column:bar" json:"bar,omitempty" validate:"required" xml:"bar" yaml:"foo"`
+}
+```
+
+> Note: The strict style can't run without the align or sort feature enabled.
 
 ## References
 
