@@ -13,10 +13,12 @@ func main() {
 	var noalign bool
 	var sort bool
 	var order string
+	var strict bool
 
 	// just for declaration.
 	flag.BoolVar(&noalign, "noalign", false, "Whether disable tags align. Default is false.")
 	flag.BoolVar(&sort, "sort", false, "Whether enable tags sort. Default is false.")
+	flag.BoolVar(&strict, "strict", false, "Whether enable strict style. Default is false. Note: strict must be used with align and sort together.")
 	flag.StringVar(&order, "order", "", "Specify the order of tags, the other tags will be sorted by name.")
 
 	// read from os.Args
@@ -27,6 +29,9 @@ func main() {
 		}
 		if arg == "-sort" {
 			sort = true
+		}
+		if arg == "-strict" {
+			strict = true
 		}
 		if arg == "-order" {
 			order = args[i+1]
@@ -43,6 +48,12 @@ func main() {
 			orders = strings.Split(order, ",")
 		}
 		options = append(options, tagalign.WithSort(orders...))
+	}
+	if strict {
+		if noalign || !sort {
+			panic("`-strict` flag must be used with `-align` and `-sort` together")
+		}
+		options = append(options, tagalign.WithStrictStyle())
 	}
 
 	singlechecker.Main(tagalign.NewAnalyzer(options...))

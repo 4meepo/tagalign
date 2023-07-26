@@ -56,3 +56,11 @@ func Test_sortBy(t *testing.T) {
 	assert.Equal(t, "gorm", tags.Tags()[4].Key)
 	assert.Equal(t, "zip", tags.Tags()[5].Key)
 }
+
+func Test_strictStyle(t *testing.T) {
+	// align and sort with fixed order
+	a := NewAnalyzer(WithSort("json", "yaml", "xml"), WithStrictStyle())
+	sort, err := filepath.Abs("testdata/strict")
+	assert.NoError(t, err)
+	analysistest.Run(t, sort, a)
+}

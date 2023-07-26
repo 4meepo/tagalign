@@ -26,3 +26,10 @@ func WithAlign(enabled bool) Option {
 		h.align = enabled
 	}
 }
+
+// WithStyle specify the style of tagalign.
+func WithStrictStyle() Option {
+	return func(h *Helper) {
+		h.style = StrictStyle
+	}
+}
