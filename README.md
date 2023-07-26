@@ -67,6 +67,8 @@ By default tagalign will only align tags, but not sort them. But alignment and [
     tagalign -fix -noalign -sort -order "json,xml" {package path}
     # Align and sort together.
     tagalign -fix -sort -order "json,xml" {package path}
+    # Align and sort together in strict style.
+    tagalign -fix -sort -order "json,xml" -strict {package path}
     ```
 
 ## Advanced Features
