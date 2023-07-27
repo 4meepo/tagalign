@@ -340,14 +340,9 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 			sortBy(w.fixedTagOrder, tags)
 		}
 
-		if reflect.DeepEqual(originalTags, tags.Tags()) {
-			// if tags order not changed, do nothing
-			continue
-		}
-
 		newTagValue := fmt.Sprintf("`%s`", tags.String())
-		if field.Tag.Value == newTagValue {
-			// nothing changed
+		if reflect.DeepEqual(originalTags, tags.Tags()) && field.Tag.Value == newTagValue {
+			// if tags order not changed, do nothing
 			continue
 		}
 

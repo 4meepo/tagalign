@@ -7,6 +7,6 @@ type SortWithOrderExample struct {
 	FooBar int `xml:"bar"           json:"bar,omitempty"             yaml:"foo"   gorm:"column:bar"   `
 	// aligned but not sorted, should be reported
 	BarFoo int `xml:"bar" yaml:"foo" json:"bar,omitempty" gorm:"column:bar" validate:"required" zip:"bar"` // want `xml:"bar" json:"bar,omitempty" yaml:"foo" gorm:"column:bar" validate:"required" zip:"bar"`
-	// not aligned but sorted, should not be reported
-	FooBarFoo int `xml:"bar"    json:"bar,omitempty"       yaml:"foo"       gorm:"column:bar" validate:"required" zip:"bar"`
+	// not aligned but sorted, should trim spaces between tags
+	FooBarFoo int `xml:"bar"    json:"bar,omitempty"       yaml:"foo"       gorm:"column:bar" validate:"required" zip:"bar"` // want `xml:"bar" json:"bar,omitempty" yaml:"foo" gorm:"column:bar" validate:"required" zip:"bar"`
 }

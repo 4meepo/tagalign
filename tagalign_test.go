@@ -64,3 +64,11 @@ func Test_strictStyle(t *testing.T) {
 	assert.NoError(t, err)
 	analysistest.Run(t, sort, a)
 }
+
+func Test_alignSingleField(t *testing.T) {
+	// only align
+	a := NewAnalyzer()
+	unsort, err := filepath.Abs("testdata/single_field")
+	assert.NoError(t, err)
+	analysistest.Run(t, unsort, a)
+}
