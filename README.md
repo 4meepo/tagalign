@@ -117,7 +117,7 @@ type StrictStyleExample struct {
 }
 ```
 
-> Note: The strict style can't run without the align or sort feature enabled.
+> ⚠️Note: The strict style can't run without the align or sort feature enabled.
 
 ## References
 
