@@ -52,6 +52,11 @@ func Run(pass *analysis.Pass, options ...Option) []Issue {
 			opt(h)
 		}
 
+		//  StrictStyle must be used with WithAlign(true) and WithSort(...) together, or it will be ignored.
+		if h.style == StrictStyle && (!h.align || !h.sort) {
+			h.style = DefaultStyle
+		}
+
 		if !h.align && !h.sort {
 			// do nothing
 			return nil
