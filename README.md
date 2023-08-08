@@ -48,7 +48,7 @@ By default tagalign will only align tags, but not sort them. But alignment and [
 * As a Golangci Linter (Recommended)
 
     Tagalign is a built-in linter in [Golangci Lint](https://golangci-lint.run/usage/linters/#tagalign) since `v1.53`.
-    > Note: In order to have the best experience,  add the `--fix` flag to `golangci-lint` to enabled the aufofix feature.
+    > Note: In order to have the best experience,  add the `--fix` flag to `golangci-lint` to enable the autofix feature.
 
 * Standalone Mode
 
