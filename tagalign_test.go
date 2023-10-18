@@ -39,6 +39,7 @@ func Test_alignAndSortWithOrder(t *testing.T) {
 	assert.NoError(t, err)
 	analysistest.Run(t, sort, a)
 }
+
 func TestSprintf(t *testing.T) {
 	format := alignFormat(20)
 	assert.Equal(t, "%-20s", format)
@@ -69,6 +70,14 @@ func Test_alignSingleField(t *testing.T) {
 	// only align
 	a := NewAnalyzer()
 	unsort, err := filepath.Abs("testdata/single_field")
+	assert.NoError(t, err)
+	analysistest.Run(t, unsort, a)
+}
+
+func Test_issues6(t *testing.T) {
+	// only align
+	a := NewAnalyzer()
+	unsort, err := filepath.Abs("testdata/issues6")
 	assert.NoError(t, err)
 	analysistest.Run(t, unsort, a)
 }
