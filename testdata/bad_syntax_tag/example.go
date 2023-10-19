@@ -10,8 +10,8 @@ type FooBar struct {
 type FooBar2 struct {
 	Foo int `json:"foo" validate:"required"`
 
-	Bar string `json:bar` // want `bad syntax for struct tag value`
-
-	FooFoo int8 `json:"foo_foo"`
-	BarBar int  `json:"bar_bar" validate:"required"`
+	FooFoo int8   `json:"foo_foo"`
+	BarBar int    `json:"bar_bar" validate:"required"`
+	XXX    int    `json:"xxx"     validate:"required"`
+	Bar    string `json:bar` // want `bad syntax for struct tag value`
 }

@@ -221,7 +221,7 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 			if err != nil {
 				// if tag value is not a valid string, report it directly
 				w.report(pass, field, column, errTagValueSyntax, field.Tag.Value)
-				fields = append(fields[:i], fields[i+1:]...)
+				fields = removeField(fields, i)
 				continue
 			}
 
@@ -229,7 +229,7 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 			if err != nil {
 				// if tag value is not a valid struct tag, report it directly
 				w.report(pass, field, column, err.Error(), field.Tag.Value)
-				fields = append(fields[:i], fields[i+1:]...)
+				fields = removeField(fields, i)
 				continue
 			}
 
@@ -448,4 +448,12 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func removeField(fields []*ast.Field, index int) []*ast.Field {
+	if index < 0 || index >= len(fields) {
+		return fields
+	}
+
+	return append(fields[:index], fields[index+1:]...)
 }
