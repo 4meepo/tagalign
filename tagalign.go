@@ -211,25 +211,28 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 			}
 			uniqueKeys = append(uniqueKeys, k)
 		}
-		mark := make(map[int]struct{})
 
-		for i, field := range fields {
+		for i := 0; i < len(fields); {
+			field := fields[i]
 			column := pass.Fset.Position(field.Tag.Pos()).Column - 1
+			offsets[i] = column
+
 			tag, err := strconv.Unquote(field.Tag.Value)
 			if err != nil {
-				mark[i] = struct{}{}
+				// if tag value is not a valid string, report it directly
 				w.report(pass, field, column, errTagValueSyntax, field.Tag.Value)
+				fields = append(fields[:i], fields[i+1:]...)
 				continue
 			}
 
 			tags, err := structtag.Parse(tag)
 			if err != nil {
-				mark[i] = struct{}{}
+				// if tag value is not a valid struct tag, report it directly
 				w.report(pass, field, column, err.Error(), field.Tag.Value)
+				fields = append(fields[:i], fields[i+1:]...)
 				continue
 			}
 
-			offsets = append(offsets, column)
 			maxTagNum = max(maxTagNum, tags.Len())
 
 			if w.sort {
@@ -244,18 +247,9 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 				addKey(t.Key)
 			}
 			tagsGroup = append(tagsGroup, tags.Tags())
-		}
 
-		offset := 0
-		for i := range fields {
-			if _, exist := mark[i]; exist {
-				continue
-			}
-
-			fields[offset] = fields[i]
-			offset++
+			i++
 		}
-		fields = fields[:offset]
 
 		if w.sort && StrictStyle == w.style {
 			sortAllKeys(w.fixedTagOrder, uniqueKeys)

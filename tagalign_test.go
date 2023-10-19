@@ -74,10 +74,10 @@ func Test_alignSingleField(t *testing.T) {
 	analysistest.Run(t, unsort, a)
 }
 
-func Test_issues6(t *testing.T) {
+func Test_badSyntaxTag(t *testing.T) {
 	// only align
 	a := NewAnalyzer()
-	unsort, err := filepath.Abs("testdata/issues6")
+	unsort, err := filepath.Abs("testdata/bad_syntax_tag")
 	assert.NoError(t, err)
 	analysistest.Run(t, unsort, a)
 }
