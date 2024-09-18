@@ -6,8 +6,8 @@ type FooBar struct {
 	FooFoo int8   `json:"foo_foo"    validate:"required"      yaml:"fooFoo"` // want `tag is not aligned, should be: json:"foo_foo"`
 	BarBar int    `json:"bar_bar"         validate:"required"`               // want `tag is not aligned, should be: json:"bar_bar"`
 	FooBar struct {
-		Foo    int    `json:"foo"    yaml:"foo"     validate:"required"` // want `tag is not aligned, should be: json:"foo"    yaml:"foo"          validate:"required"`
-		Bar222 string `json:"bar222"   validate:"required"  yaml:"bar"`  // want `tag is not aligned, should be: json:"bar222" validate:"required" yaml:"bar"`
+		Foo    int    `json:"foo"    yaml:"foo"     validate:"required"` // want `tag is not aligned, should be: json:"foo"     yaml:"foo"          validate:"required"`
+		Bar222 string `json:"bar222啊"   validate:"required"  yaml:"bar"` // want `tag is not aligned, should be: json:"bar222啊" validate:"required" yaml:"bar"`
 	} `json:"foo_bar" validate:"required"`
 	FooFooFoo struct {
 		BarBarBar struct {

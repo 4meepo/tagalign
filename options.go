@@ -35,3 +35,9 @@ func WithStrictStyle() Option {
 		h.style = StrictStyle
 	}
 }
+
+func WithStopAlignThreshold(threshold int) Option {
+	return func(h *Helper) {
+		h.stopAlignThreshold = threshold
+	}
+}
