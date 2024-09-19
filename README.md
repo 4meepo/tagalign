@@ -69,6 +69,8 @@ By default tagalign will only align tags, but not sort them. But alignment and [
     tagalign -fix -sort -order "json,xml" {package path}
     # Align and sort together in strict style.
     tagalign -fix -sort -order "json,xml" -strict {package path}
+    # Stop align if tag length difference exceeds.
+    tagalign -fix -sort -order "json,xml" -threshold 20 {package path}
     ```
 
 ## Advanced Features
@@ -117,7 +119,40 @@ type StrictStyleExample struct {
 }
 ```
 
-> ⚠️Note: The strict style can't run without the align or sort feature enabled.
+> ⚠️Note: The strict style must run with the align and sort feature both enabled.
+
+### Stop Align Threshold
+
+With this options, you can specifies the maximum allowable length difference between struct tags in the same column before alignment stops. When the difference between the longest and shortest tags exceeds this threshold, the alignment for subsequent tags in that column will be disabled, while the preceding tags will remain aligned. This helps maintain readability without creating large gaps. Because if the IDE wrap the line with too much gaps, it may be difficult to read.
+
+For example, if we align it with threshold 20, the following code
+
+```go
+type Foo struct {
+    Bar string `json:"bar"  description:"this is a very very long description and will lead to wrap line." required:"true"  xml:"bar"`
+    FooBar string `json:"fooBar"  yaml:"fooBar" required:"true"`
+}
+```
+
+will be sorted and aligned to:
+
+```go
+type Foo struct {
+    Bar string    `json:"bar"    description:"this is a very very long description and will lead to wrap line." required:"true" xml:"bar"`
+    FooBar string `json:"fooBar" yaml:"fooBar" required:"true"`
+}
+```
+
+If we don't set the threshold, the code will be aligned to:
+
+```go
+type Foo struct {
+    Bar    string `json:"bar"    description:"this is a very very long description and will lead to wrap line." required:"true" xml:"bar"`
+    FooBar string `json:"fooBar" yaml:"fooBar"                                                                  required:"true"`
+}
+```
+
+And sometimes too much gaps will make the code hard to read if IDE wraps the line.
 
 ## References
 

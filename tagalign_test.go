@@ -81,3 +81,18 @@ func Test_badSyntaxTag(t *testing.T) {
 	assert.NoError(t, err)
 	analysistest.Run(t, unsort, a)
 }
+
+func Test_stopAlignThreshold(t *testing.T) {
+	a := NewAnalyzer(WithStopAlignThreshold(10))
+	orig, err := filepath.Abs("testdata/stop_align_threshold")
+	assert.NoError(t, err)
+
+	analysistest.Run(t, orig, a)
+}
+func Test_stopAlignThresholdInStrictMode(t *testing.T) {
+	a := NewAnalyzer(WithStopAlignThreshold(10), WithStrictStyle(), WithSort("json", "description", "yaml"))
+	orig, err := filepath.Abs("testdata/stop_align_threshold_strict")
+	assert.NoError(t, err)
+
+	analysistest.Run(t, orig, a)
+}
