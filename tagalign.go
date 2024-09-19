@@ -262,10 +262,8 @@ func (w *Helper) processGroup(pass *analysis.Pass) {
 			i++
 		}
 
-		if w.sort {
+		if w.sort && StrictStyle == w.style {
 			sortAllKeys(w.fixedTagOrder, uniqueKeys)
-		}
-		if w.style == StrictStyle {
 			maxTagNum = len(uniqueKeys)
 		}
 
@@ -302,7 +300,6 @@ func (w *Helper) processGroup(pass *analysis.Pass) {
 					// tag absent in strict mode.
 					if !found {
 						minLength = 0
-						break
 					}
 				} else {
 					if j >= len(tagsGroup[i]) {
