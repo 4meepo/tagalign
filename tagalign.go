@@ -3,8 +3,6 @@ package tagalign
 import (
 	"fmt"
 	"go/ast"
-	"go/token"
-	"log"
 	"reflect"
 	"sort"
 	"strconv"
@@ -13,13 +11,6 @@ import (
 	"github.com/fatih/structtag"
 
 	"golang.org/x/tools/go/analysis"
-)
-
-type Mode int
-
-const (
-	StandaloneMode Mode = iota
-	GolangciLintMode
 )
 
 type Style int
@@ -44,11 +35,9 @@ func NewAnalyzer(options ...Option) *analysis.Analyzer {
 	}
 }
 
-func Run(pass *analysis.Pass, options ...Option) []Issue {
-	var issues []Issue
+func Run(pass *analysis.Pass, options ...Option) {
 	for _, f := range pass.Files {
 		h := &Helper{
-			mode:  StandaloneMode,
 			style: DefaultStyle,
 			align: true,
 		}
@@ -63,22 +52,19 @@ func Run(pass *analysis.Pass, options ...Option) []Issue {
 
 		if !h.align && !h.sort {
 			// do nothing
-			return nil
+			return
 		}
 
 		ast.Inspect(f, func(n ast.Node) bool {
 			h.find(pass, n)
 			return true
 		})
+
 		h.Process(pass)
-		issues = append(issues, h.issues...)
 	}
-	return issues
 }
 
 type Helper struct {
-	mode Mode
-
 	style Style
 
 	align         bool     // whether enable tags align.
@@ -87,19 +73,6 @@ type Helper struct {
 
 	singleFields            []*ast.Field
 	consecutiveFieldsGroups [][]*ast.Field // fields in this group, must be consecutive in struct.
-	issues                  []Issue
-}
-
-// Issue is used to integrate with golangci-lint's inline auto fix.
-type Issue struct {
-	Pos       token.Position
-	Message   string
-	InlineFix InlineFix
-}
-type InlineFix struct {
-	StartCol  int // zero-based
-	Length    int
-	NewString string
 }
 
 func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
@@ -159,39 +132,24 @@ func (w *Helper) find(pass *analysis.Pass, n ast.Node) {
 	split()
 }
 
-func (w *Helper) report(pass *analysis.Pass, field *ast.Field, startCol int, msg, replaceStr string) {
-	if w.mode == GolangciLintMode {
-		iss := Issue{
-			Pos:     pass.Fset.Position(field.Tag.Pos()),
-			Message: msg,
-			InlineFix: InlineFix{
-				StartCol:  startCol,
-				Length:    len(field.Tag.Value),
-				NewString: replaceStr,
-			},
-		}
-		w.issues = append(w.issues, iss)
-	}
-
-	if w.mode == StandaloneMode {
-		pass.Report(analysis.Diagnostic{
-			Pos:     field.Tag.Pos(),
-			End:     field.Tag.End(),
-			Message: msg,
-			SuggestedFixes: []analysis.SuggestedFix{
-				{
-					Message: msg,
-					TextEdits: []analysis.TextEdit{
-						{
-							Pos:     field.Tag.Pos(),
-							End:     field.Tag.End(),
-							NewText: []byte(replaceStr),
-						},
+func (w *Helper) report(pass *analysis.Pass, field *ast.Field, msg, replaceStr string) {
+	pass.Report(analysis.Diagnostic{
+		Pos:     field.Tag.Pos(),
+		End:     field.Tag.End(),
+		Message: msg,
+		SuggestedFixes: []analysis.SuggestedFix{
+			{
+				Message: msg,
+				TextEdits: []analysis.TextEdit{
+					{
+						Pos:     field.Tag.Pos(),
+						End:     field.Tag.End(),
+						NewText: []byte(replaceStr),
 					},
 				},
 			},
-		})
-	}
+		},
+	})
 }
 
 func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
@@ -220,7 +178,7 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 			tag, err := strconv.Unquote(field.Tag.Value)
 			if err != nil {
 				// if tag value is not a valid string, report it directly
-				w.report(pass, field, column, errTagValueSyntax, field.Tag.Value)
+				w.report(pass, field, errTagValueSyntax, field.Tag.Value)
 				fields = removeField(fields, i)
 				continue
 			}
@@ -228,7 +186,7 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 			tags, err := structtag.Parse(tag)
 			if err != nil {
 				// if tag value is not a valid struct tag, report it directly
-				w.report(pass, field, column, err.Error(), field.Tag.Value)
+				w.report(pass, field, err.Error(), field.Tag.Value)
 				fields = removeField(fields, i)
 				continue
 			}
@@ -340,22 +298,21 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 
 			msg := "tag is not aligned, should be: " + unquoteTag
 
-			w.report(pass, field, offsets[i], msg, newTagValue)
+			w.report(pass, field, msg, newTagValue)
 		}
 	}
 
 	// process single fields
 	for _, field := range w.singleFields {
-		column := pass.Fset.Position(field.Tag.Pos()).Column - 1
 		tag, err := strconv.Unquote(field.Tag.Value)
 		if err != nil {
-			w.report(pass, field, column, errTagValueSyntax, field.Tag.Value)
+			w.report(pass, field, errTagValueSyntax, field.Tag.Value)
 			continue
 		}
 
 		tags, err := structtag.Parse(tag)
 		if err != nil {
-			w.report(pass, field, column, err.Error(), field.Tag.Value)
+			w.report(pass, field, err.Error(), field.Tag.Value)
 			continue
 		}
 		originalTags := append([]*structtag.Tag(nil), tags.Tags()...)
@@ -371,15 +328,8 @@ func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
 
 		msg := "tag is not aligned , should be: " + tags.String()
 
-		w.report(pass, field, column, msg, newTagValue)
+		w.report(pass, field, msg, newTagValue)
 	}
-}
-
-// Issues returns all issues found by the analyzer.
-// It is used to integrate with golangci-lint.
-func (w *Helper) Issues() []Issue {
-	log.Println("tagalign 's Issues() should only be called in golangci-lint mode")
-	return w.issues
 }
 
 // sortBy sorts tags by fixed order.
@@ -441,13 +391,6 @@ func findIndex(s []string, e string) int {
 
 func alignFormat(length int) string {
 	return "%" + fmt.Sprintf("-%ds", length)
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 func removeField(fields []*ast.Field, index int) []*ast.Field {
