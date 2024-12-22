@@ -152,7 +152,8 @@ func (w *Helper) report(pass *analysis.Pass, field *ast.Field, msg, replaceStr s
 	})
 }
 
-func (w *Helper) Process(pass *analysis.Pass) { //nolint:gocognit
+//nolint:gocognit,gocyclo,nestif
+func (w *Helper) Process(pass *analysis.Pass) {
 	// process grouped fields
 	for _, fields := range w.consecutiveFieldsGroups {
 		offsets := make([]int, len(fields))
