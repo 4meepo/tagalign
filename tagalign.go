@@ -1,10 +1,11 @@
 package tagalign
 
 import (
+	"cmp"
 	"fmt"
 	"go/ast"
 	"reflect"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -200,7 +201,7 @@ func (w *Helper) Process(pass *analysis.Pass) {
 					cp[i] = tag
 				}
 				notSortedTagsGroup = append(notSortedTagsGroup, cp)
-				sortBy(w.fixedTagOrder, tags)
+				sortTags(w.fixedTagOrder, tags)
 			}
 			for _, t := range tags.Tags() {
 				addKey(t.Key)
@@ -211,7 +212,7 @@ func (w *Helper) Process(pass *analysis.Pass) {
 		}
 
 		if w.sort && StrictStyle == w.style {
-			sortAllKeys(w.fixedTagOrder, uniqueKeys)
+			sortKeys(w.fixedTagOrder, uniqueKeys)
 			maxTagNum = len(uniqueKeys)
 		}
 
@@ -318,7 +319,7 @@ func (w *Helper) Process(pass *analysis.Pass) {
 		}
 		originalTags := append([]*structtag.Tag(nil), tags.Tags()...)
 		if w.sort {
-			sortBy(w.fixedTagOrder, tags)
+			sortTags(w.fixedTagOrder, tags)
 		}
 
 		newTagValue := fmt.Sprintf("`%s`", tags.String())
@@ -333,61 +334,37 @@ func (w *Helper) Process(pass *analysis.Pass) {
 	}
 }
 
-// sortBy sorts tags by fixed order.
+// sortTags sorts tags by fixed order.
 // If a tag is not in the fixed order, it will be sorted by name.
-func sortBy(fixedOrder []string, tags *structtag.Tags) {
-	// sort by fixed order
-	sort.Slice(tags.Tags(), func(i, j int) bool {
-		ti := tags.Tags()[i]
-		tj := tags.Tags()[j]
-
-		oi := findIndex(fixedOrder, ti.Key)
-		oj := findIndex(fixedOrder, tj.Key)
-
-		if oi == -1 && oj == -1 {
-			return ti.Key < tj.Key
-		}
-
-		if oi == -1 {
-			return false
-		}
-
-		if oj == -1 {
-			return true
-		}
-
-		return oi < oj
+func sortTags(fixedOrder []string, tags *structtag.Tags) {
+	slices.SortFunc(tags.Tags(), func(a, b *structtag.Tag) int {
+		return compareByFixedOrder(fixedOrder)(a.Key, b.Key)
 	})
 }
 
-func sortAllKeys(fixedOrder []string, keys []string) {
-	sort.Slice(keys, func(i, j int) bool {
-		oi := findIndex(fixedOrder, keys[i])
-		oj := findIndex(fixedOrder, keys[j])
+func sortKeys(fixedOrder []string, keys []string) {
+	slices.SortFunc(keys, compareByFixedOrder(fixedOrder))
+}
+
+func compareByFixedOrder(fixedOrder []string) func(a, b string) int {
+	return func(a, b string) int {
+		oi := slices.Index(fixedOrder, a)
+		oj := slices.Index(fixedOrder, b)
 
 		if oi == -1 && oj == -1 {
-			return keys[i] < keys[j]
+			return strings.Compare(a, b)
 		}
 
 		if oi == -1 {
-			return false
+			return 1
 		}
 
 		if oj == -1 {
-			return true
+			return -1
 		}
 
-		return oi < oj
-	})
-}
-
-func findIndex(s []string, e string) int {
-	for i, a := range s {
-		if a == e {
-			return i
-		}
+		return cmp.Compare(oi, oj)
 	}
-	return -1
 }
 
 func alignFormat(length int) string {

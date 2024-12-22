@@ -40,16 +40,16 @@ func Test_alignAndSortWithOrder(t *testing.T) {
 	analysistest.Run(t, sort, a)
 }
 
-func TestSprintf(t *testing.T) {
+func Test_alignFormat(t *testing.T) {
 	format := alignFormat(20)
 	assert.Equal(t, "%-20s", format)
 }
 
-func Test_sortBy(t *testing.T) {
+func Test_sortTags(t *testing.T) {
 	tags, err := structtag.Parse(`zip:"foo" json:"foo,omitempty" yaml:"bar" binding:"required" xml:"baz" gorm:"column:foo"`)
 	assert.NoError(t, err)
 
-	sortBy([]string{"json", "yaml", "xml"}, tags)
+	sortTags([]string{"json", "yaml", "xml"}, tags)
 	assert.Equal(t, "json", tags.Tags()[0].Key)
 	assert.Equal(t, "yaml", tags.Tags()[1].Key)
 	assert.Equal(t, "xml", tags.Tags()[2].Key)
