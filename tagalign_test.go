@@ -50,11 +50,9 @@ func TestAnalyzer(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.desc, func(t *testing.T) {
-			t.Parallel()
-
 			a := NewAnalyzer(test.opts...)
 
-			analysistest.Run(t, analysistest.TestData(), a, test.dir)
+			analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), a, test.dir)
 		})
 	}
 }
