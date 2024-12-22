@@ -4,13 +4,13 @@ import (
 	"cmp"
 	"fmt"
 	"go/ast"
+	"go/token"
 	"reflect"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/fatih/structtag"
-
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -38,6 +38,13 @@ func NewAnalyzer(options ...Option) *analysis.Analyzer {
 
 func Run(pass *analysis.Pass, options ...Option) {
 	for _, f := range pass.Files {
+		filename := getFilename(pass.Fset, f)
+		if !strings.HasSuffix(filename, ".go") {
+			continue
+		}
+
+		println(filename)
+
 		h := &Helper{
 			style: DefaultStyle,
 			align: true,
@@ -377,4 +384,13 @@ func removeField(fields []*ast.Field, index int) []*ast.Field {
 	}
 
 	return append(fields[:index], fields[index+1:]...)
+}
+
+func getFilename(fset *token.FileSet, file *ast.File) string {
+	filename := fset.PositionFor(file.Pos(), true).Filename
+	if !strings.HasSuffix(filename, ".go") {
+		return fset.PositionFor(file.Pos(), false).Filename
+	}
+
+	return filename
 }

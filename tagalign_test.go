@@ -57,6 +57,12 @@ func TestAnalyzer(t *testing.T) {
 	}
 }
 
+func TestAnalyzer_cgo(t *testing.T) {
+	a := NewAnalyzer()
+
+	analysistest.Run(t, analysistest.TestData(), a, "cgo")
+}
+
 func Test_alignFormat(t *testing.T) {
 	format := alignFormat(20)
 	assert.Equal(t, "%-20s", format)
