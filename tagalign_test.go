@@ -1,7 +1,6 @@
 package tagalign
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/fatih/structtag"
@@ -9,75 +8,75 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func Test_alignOnly(t *testing.T) {
-	// only align
+func TestAnalyzer(t *testing.T) {
+	testCases := []struct {
+		desc string
+		dir  string
+		opts []Option
+	}{
+		{
+			desc: "only align",
+			dir:  "align_only",
+		},
+		{
+			desc: "sort only",
+			dir:  "sort_only",
+			opts: []Option{WithAlign(false), WithSort(nil...)},
+		},
+		{
+			desc: "sort with order",
+			dir:  "sortorder",
+			opts: []Option{WithAlign(false), WithSort("xml", "json", "yaml")},
+		},
+		{
+			desc: "align and sort with fixed order",
+			dir:  "alignsortorder",
+			opts: []Option{WithSort("json", "yaml", "xml")},
+		},
+		{
+			desc: "strict style",
+			dir:  "strict",
+			opts: []Option{WithSort("json", "yaml", "xml"), WithStrictStyle()},
+		},
+		{
+			desc: "align single field",
+			dir:  "single_field",
+		},
+		{
+			desc: "bad syntax tag",
+			dir:  "bad_syntax_tag",
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.desc, func(t *testing.T) {
+			a := NewAnalyzer(test.opts...)
+
+			analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), a, test.dir)
+		})
+	}
+}
+
+func TestAnalyzer_cgo(t *testing.T) {
 	a := NewAnalyzer()
-	unsort, err := filepath.Abs("testdata/align")
-	assert.NoError(t, err)
-	analysistest.Run(t, unsort, a)
+
+	analysistest.Run(t, analysistest.TestData(), a, "cgo")
 }
 
-func Test_sortOnly(t *testing.T) {
-	a := NewAnalyzer(WithAlign(false), WithSort(nil...))
-	sort, err := filepath.Abs("testdata/sort")
-	assert.NoError(t, err)
-	analysistest.Run(t, sort, a)
-}
-
-func Test_sortWithOrder(t *testing.T) {
-	// test disable align but enable sort
-	a := NewAnalyzer(WithAlign(false), WithSort("xml", "json", "yaml"))
-	sort, err := filepath.Abs("testdata/sortorder")
-	assert.NoError(t, err)
-	analysistest.Run(t, sort, a)
-}
-
-func Test_alignAndSortWithOrder(t *testing.T) {
-	// align and sort with fixed order
-	a := NewAnalyzer(WithSort("json", "yaml", "xml"))
-	sort, err := filepath.Abs("testdata/alignsortorder")
-	assert.NoError(t, err)
-	analysistest.Run(t, sort, a)
-}
-
-func TestSprintf(t *testing.T) {
+func Test_alignFormat(t *testing.T) {
 	format := alignFormat(20)
 	assert.Equal(t, "%-20s", format)
 }
 
-func Test_sortBy(t *testing.T) {
+func Test_sortTags(t *testing.T) {
 	tags, err := structtag.Parse(`zip:"foo" json:"foo,omitempty" yaml:"bar" binding:"required" xml:"baz" gorm:"column:foo"`)
 	assert.NoError(t, err)
 
-	sortBy([]string{"json", "yaml", "xml"}, tags)
+	sortTags([]string{"json", "yaml", "xml"}, tags)
 	assert.Equal(t, "json", tags.Tags()[0].Key)
 	assert.Equal(t, "yaml", tags.Tags()[1].Key)
 	assert.Equal(t, "xml", tags.Tags()[2].Key)
 	assert.Equal(t, "binding", tags.Tags()[3].Key)
 	assert.Equal(t, "gorm", tags.Tags()[4].Key)
 	assert.Equal(t, "zip", tags.Tags()[5].Key)
-}
-
-func Test_strictStyle(t *testing.T) {
-	// align and sort with fixed order
-	a := NewAnalyzer(WithSort("json", "yaml", "xml"), WithStrictStyle())
-	sort, err := filepath.Abs("testdata/strict")
-	assert.NoError(t, err)
-	analysistest.Run(t, sort, a)
-}
-
-func Test_alignSingleField(t *testing.T) {
-	// only align
-	a := NewAnalyzer()
-	unsort, err := filepath.Abs("testdata/single_field")
-	assert.NoError(t, err)
-	analysistest.Run(t, unsort, a)
-}
-
-func Test_badSyntaxTag(t *testing.T) {
-	// only align
-	a := NewAnalyzer()
-	unsort, err := filepath.Abs("testdata/bad_syntax_tag")
-	assert.NoError(t, err)
-	analysistest.Run(t, unsort, a)
 }

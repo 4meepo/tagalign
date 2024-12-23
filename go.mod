@@ -1,6 +1,6 @@
 module github.com/4meepo/tagalign
 
-go 1.19
+go 1.21.0
 
 require (
 	github.com/fatih/structtag v1.2.0
