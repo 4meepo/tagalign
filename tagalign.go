@@ -43,8 +43,6 @@ func Run(pass *analysis.Pass, options ...Option) {
 			continue
 		}
 
-		println(filename)
-
 		h := &Helper{
 			style: DefaultStyle,
 			align: true,
