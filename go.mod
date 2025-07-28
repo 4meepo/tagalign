@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.2
 
 require (
-	github.com/fatih/structtag v1.2.0
+	github.com/alfatraining/structtag v1.0.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/tools v0.30.0
 )

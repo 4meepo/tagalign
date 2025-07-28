@@ -3,7 +3,7 @@ package tagalign
 import (
 	"testing"
 
-	"github.com/fatih/structtag"
+	"github.com/alfatraining/structtag"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
