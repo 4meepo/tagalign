@@ -46,6 +46,11 @@ func TestAnalyzer(t *testing.T) {
 			desc: "bad syntax tag",
 			dir:  "bad_syntax_tag",
 		},
+		{
+			desc: "nested",
+			dir:  "nested",
+			opts: []Option{WithStrictStyle(), WithSort(), WithAlign(true)},
+		},
 	}
 
 	for _, test := range testCases {
