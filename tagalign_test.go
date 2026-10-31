@@ -14,6 +14,8 @@ func TestAnalyzer(t *testing.T) {
 		dir  string
 		opts []Option
 	}{
+		{desc: "unicode align", dir: "unicode_tags"},
+		{desc: "unicode strict", dir: "unicode_tags", opts: []Option{WithSort("tech", "json"), WithStrictStyle()}},
 		{
 			desc: "only align",
 			dir:  "align_only",
