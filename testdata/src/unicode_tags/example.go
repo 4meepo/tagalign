@@ -1,0 +1,12 @@
+package unicode
+
+type Aligned struct {
+	Path    string `tech:"d=Путь"         json:"path"`
+	Method  string `tech:"d=Метод"        json:"method"`
+	Request string `tech:"d=Тело запроса" json:"request"`
+}
+
+type Unaligned struct {
+	Path    string `tech:"d=Путь" json:"path"` // want `tag is not aligned`
+	Request string `tech:"d=Тело запроса" json:"request"`
+}

@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/alfatraining/structtag"
 	"golang.org/x/tools/go/analysis"
@@ -239,7 +240,7 @@ func (w *Helper) Process(pass *analysis.Pass) {
 					// search by key
 					for _, tag := range tagsGroup[i] {
 						if tag.Key == key {
-							maxLength = max(maxLength, len(tag.String()))
+							maxLength = max(maxLength, utf8.RuneCountInString(tag.String()))
 							break
 						}
 					}
@@ -248,7 +249,7 @@ func (w *Helper) Process(pass *analysis.Pass) {
 						// in case of index out of range
 						continue
 					}
-					maxLength = max(maxLength, len(tagsGroup[i][j].String()))
+					maxLength = max(maxLength, utf8.RuneCountInString(tagsGroup[i][j].String()))
 				}
 			}
 			tagMaxLens[j] = tagLen{key, maxLength}
